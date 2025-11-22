@@ -20,13 +20,13 @@ func init() {
 func usage() {
 	fmt.Fprintf(os.Stderr, "usage: %s [options] <filename>\n", os.Args[0])
 	flag.PrintDefaults()
-	os.Exit(-1)
+	os.Exit(1)
 }
 
 func main() {
 	if from == to {
 		fmt.Fprintf(os.Stderr, "error: from and to format are the same\n")
-		os.Exit(-1)
+		os.Exit(1)
 	}
 
 	filename := flag.Arg(0)
@@ -37,7 +37,7 @@ func main() {
 	raw, err := os.ReadFile(filename)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error: %v\n", err)
-		os.Exit(-1)
+		os.Exit(1)
 	}
 
 	switch from {
@@ -49,7 +49,7 @@ func main() {
 			raw, err = convert.JSONToHCL(raw)
 		default:
 			fmt.Fprintf(os.Stderr, "error: unsupported to format %s\n", to)
-			os.Exit(-1)
+			os.Exit(1)
 		}
 	case "yaml":
 		switch to {
@@ -59,7 +59,7 @@ func main() {
 			raw, err = convert.YAMLToHCL(raw)
 		default:
 			fmt.Fprintf(os.Stderr, "error: unsupported to format %s\n", to)
-			os.Exit(-1)
+			os.Exit(1)
 		}
 	case "hcl":
 		switch to {
@@ -69,18 +69,17 @@ func main() {
 			raw, err = convert.HCLToYAML(raw)
 		default:
 			fmt.Fprintf(os.Stderr, "error: unsupported to format %s\n", to)
-			os.Exit(-1)
+			os.Exit(1)
 		}
 	default:
 		fmt.Fprintf(os.Stderr, "error: unsupported from format %s\n", from)
-		os.Exit(-1)
+		os.Exit(1)
 	}
 
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error: %v\n", err)
-		os.Exit(-1)
+		os.Exit(1)
 	}
 
 	fmt.Printf("%s\n", raw)
-	os.Exit(0)
 }
