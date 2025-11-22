@@ -45,13 +45,6 @@ func classifyMapStructure(item any) (mapStructureType, map[string]any) {
 	return shallowMap, m
 }
 
-// isHashAll is deprecated. Use classifyMapStructure instead.
-// Maintained for backward compatibility.
-func isHashAll(item any) (int, map[string]any) {
-	typ, m := classifyMapStructure(item)
-	return int(typ), m
-}
-
 // encodePrimitiveOrRecurse attempts to encode a value as a primitive (string, bool, number).
 // If the value is complex, it returns the bytes from recursive marshaling.
 // Returns: (primitiveString, recursiveBytes, error)

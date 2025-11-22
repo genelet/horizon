@@ -40,13 +40,4 @@ const (
 	// tempAttributeName is the temporary attribute name used when parsing expressions
 	// that need to be wrapped in an HCL attribute context
 	tempAttributeName = "x"
-
-	// hclIndentSpaces is the number of spaces used for each indentation level in HCL output
-	hclIndentSpaces = 2
-
-	// emptyArrayHCL is the HCL representation of an empty array
-	emptyArrayHCL = "[]"
-
-	// emptyObjectHCL is the HCL representation of an empty object
-	emptyObjectHCL = "{}"
 )
