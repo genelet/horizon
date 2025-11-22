@@ -30,14 +30,14 @@ type Unmarshaler interface {
 //
 // Parameters:
 //   - hclData: HCL data as bytes
-//   - current: pointer to struct, []interface{}, or map[string]interface{}
+//   - current: pointer to struct, []any, or map[string]any
 //   - labels: optional HCL label values (for blocks with labels)
 //
 // Supported types:
 //   - Primitives: string, int, float, bool
 //   - Collections: []T, map[string]T
 //   - Structs with hcl tags
-//   - map[string]interface{} and []interface{} for dynamic content
+//   - map[string]any and []any for dynamic content
 //
 // Example:
 //
@@ -51,7 +51,7 @@ type Unmarshaler interface {
 //	err := Unmarshal(hcl, &cfg)
 //
 // Returns an error if decoding fails.
-func Unmarshal(hclData []byte, current interface{}, labels ...string) error {
+func Unmarshal(hclData []byte, current any, labels ...string) error {
 	if current == nil {
 		return nil
 	}
@@ -81,13 +81,13 @@ func Unmarshal(hclData []byte, current interface{}, labels ...string) error {
 //
 // The spec parameter describes how interface fields should be decoded:
 //
-//	spec, err := utils.NewStruct("Geo", map[string]interface{}{
+//	spec, err := utils.NewStruct("Geo", map[string]any{
 //	    "Shape": "Circle",  // Shape interface should be decoded as Circle
 //	})
 //
 // The ref parameter provides zero-value instances for all possible types:
 //
-//	ref := map[string]interface{}{
+//	ref := map[string]any{
 //	    "Circle": &Circle{},
 //	    "Square": &Square{},
 //	    "Geo":    &Geo{},
@@ -103,14 +103,14 @@ func Unmarshal(hclData []byte, current interface{}, labels ...string) error {
 //	}
 //
 //	hcl := []byte(`name = "test"\nshape { radius = 5.0 }`)
-//	spec, _ := utils.NewStruct("Geo", map[string]interface{}{"Shape": "Circle"})
-//	ref := map[string]interface{}{"Circle": &Circle{}, "Geo": &Geo{}}
+//	spec, _ := utils.NewStruct("Geo", map[string]any{"Shape": "Circle"})
+//	ref := map[string]any{"Circle": &Circle{}, "Geo": &Geo{}}
 //
 //	var geo Geo
 //	err := UnmarshalSpec(hcl, &geo, spec, ref)
 //
 // Returns an error if decoding fails or if referenced types are not in ref map.
-func UnmarshalSpec(hclData []byte, current interface{}, spec *utils.Struct, ref map[string]interface{}, labels ...string) error {
+func UnmarshalSpec(hclData []byte, current any, spec *utils.Struct, ref map[string]any, labels ...string) error {
 	node, ref := utils.NewTreeCtyFunction(ref)
 	return UnmarshalSpecTree(node, hclData, current, spec, ref, labels...)
 }
@@ -124,7 +124,7 @@ func UnmarshalSpec(hclData []byte, current interface{}, spec *utils.Struct, ref 
 // Parameters:
 //   - node: tree node for variable scope management (created with utils.NewTreeCtyFunction)
 //   - hclData: HCL data as bytes
-//   - current: pointer to target struct, map[string]interface{}, or []interface{}
+//   - current: pointer to target struct, map[string]any, or []any
 //   - spec: struct specification describing interface field types (nil for no interfaces)
 //   - ref: type registry mapping type names to zero-value instances
 //   - labels: optional HCL label values for labeled blocks
@@ -135,7 +135,7 @@ func UnmarshalSpec(hclData []byte, current interface{}, spec *utils.Struct, ref 
 // Example:
 //
 //	node, ref := utils.NewTreeCtyFunction(ref)
-//	spec, _ := utils.NewStruct("Config", map[string]interface{}{
+//	spec, _ := utils.NewStruct("Config", map[string]any{
 //	    "Database": "PostgresDB",
 //	})
 //
@@ -144,14 +144,14 @@ func UnmarshalSpec(hclData []byte, current interface{}, spec *utils.Struct, ref 
 //
 // Returns an error if decoding fails, if the target is not a pointer, or if referenced
 // types are not found in the ref map.
-func UnmarshalSpecTree(node *utils.Tree, hclData []byte, current interface{}, spec *utils.Struct, ref map[string]interface{}, labels ...string) error {
+func UnmarshalSpecTree(node *utils.Tree, hclData []byte, current any, spec *utils.Struct, ref map[string]any, labels ...string) error {
 	reflectValue := reflect.ValueOf(current)
 	if reflectValue.Kind() != reflect.Pointer {
 		return fmt.Errorf("non-pointer or nil data")
 	}
 	reflectValue = reflectValue.Elem()
 
-	// Handle map[string]interface{} and []interface{} types
+	// Handle map[string]any and []any types
 	switch reflectValue.Kind() {
 	case reflect.Map:
 		return unmarshalToMap(node, hclData, current)
@@ -254,7 +254,7 @@ func UnmarshalSpecTree(node *utils.Tree, hclData []byte, current interface{}, sp
 //   - labels: optional HCL label values
 //
 // Returns error if unmarshaling fails.
-func tryUnmarshalWithCustom(subnode *utils.Tree, hclData []byte, trial interface{}, nextStruct *utils.Struct, ref map[string]interface{}, labels ...string) error {
+func tryUnmarshalWithCustom(subnode *utils.Tree, hclData []byte, trial any, nextStruct *utils.Struct, ref map[string]any, labels ...string) error {
 	unmarshaler, ok := trial.(Unmarshaler)
 	if ok {
 		return unmarshaler.UnmarshalHCL(hclData, labels...)
@@ -264,12 +264,12 @@ func tryUnmarshalWithCustom(subnode *utils.Tree, hclData []byte, trial interface
 
 // hclBodyParseResult holds the categorized results from parsing an HCL body
 type hclBodyParseResult struct {
-	LabelExprs      map[string]hclsyntax.Expression   // Label field expressions
-	ExistingAttrs   map[string]bool                   // Simple attributes that exist
+	LabelExprs        map[string]hclsyntax.Expression // Label field expressions
+	ExistingAttrs     map[string]bool                 // Simple attributes that exist
 	SimpleFieldsValue reflect.Value                   // Decoded simple fields struct
-	InterfaceAttrs  map[string]*hclsyntax.Attribute   // Dynamic interface attributes
-	InterfaceBlocks map[string][]*hclsyntax.Block     // Dynamic interface blocks
-	BlockData       map[string][]*hclsyntax.Block     // Complex block data
+	InterfaceAttrs    map[string]*hclsyntax.Attribute // Dynamic interface attributes
+	InterfaceBlocks   map[string][]*hclsyntax.Block   // Dynamic interface blocks
+	BlockData         map[string][]*hclsyntax.Block   // Complex block data
 }
 
 // categorizeHCLBody parses and categorizes HCL body elements into different field types
@@ -434,14 +434,14 @@ func buildTagIndex(fields []reflect.StructField) map[string]bool {
 
 // structFieldCategories holds categorized struct fields for unmarshaling
 type structFieldCategories struct {
-	Labels         []reflect.StructField // Fields marked with "label" modifier
-	SimpleFields   []reflect.StructField // Normal fields decoded with gohcl
-	BlockFields    []reflect.StructField // Block fields decoded individually
-	InterfaceFields []reflect.StructField // Dynamic map[string]interface{} or []interface{}
+	Labels          []reflect.StructField // Fields marked with "label" modifier
+	SimpleFields    []reflect.StructField // Normal fields decoded with gohcl
+	BlockFields     []reflect.StructField // Block fields decoded individually
+	InterfaceFields []reflect.StructField // Dynamic map[string]any or []any
 }
 
 // categorizeStructFields analyzes struct fields and categorizes them into different types
-func categorizeStructFields(structType reflect.Type, objectMap map[string]*utils.Value, ref map[string]interface{}, nullAttrs []string) (*structFieldCategories, error) {
+func categorizeStructFields(structType reflect.Type, objectMap map[string]*utils.Value, ref map[string]any, nullAttrs []string) (*structFieldCategories, error) {
 	categories := &structFieldCategories{}
 	for i := 0; i < structType.NumField(); i++ {
 		field := structType.Field(i)
@@ -458,11 +458,11 @@ func categorizeStructFields(structType reflect.Type, objectMap map[string]*utils
 			continue
 		}
 		tagModifier := parseHCLTag(field.Tag)[1]
-		if strings.ToLower(tagModifier) == TagModifierLabel {
+		if strings.ToLower(tagModifier) == tagModifierLabel {
 			categories.Labels = append(categories.Labels, field)
 			continue
 		}
-		if tag == TagIgnore || (len(tag) >= 2 && tag[len(tag)-2:] == TagIgnoreSuffix) {
+		if tag == tagIgnore || (len(tag) >= 2 && tag[len(tag)-2:] == tagIgnoreSuffix) {
 			continue
 		}
 		if _, ok := objectMap[name]; ok {
@@ -487,66 +487,86 @@ func categorizeStructFields(structType reflect.Type, objectMap map[string]*utils
 		}
 
 		if fieldType.Kind() == reflect.Struct {
-			typeName := fieldType.String()
-			ref[typeName] = reflect.New(fieldType).Interface()
-			valueSpec, err := utils.NewValue(typeName)
-			if err != nil {
+			if err := handleStructField(field, fieldType, objectMap, ref, categories); err != nil {
 				return nil, err
 			}
-			objectMap[field.Name] = valueSpec
-			categories.BlockFields = append(categories.BlockFields, field)
 		} else if fieldType.Kind() == reflect.Map && fieldType.Key().Kind() == reflect.Array && fieldType.Key().Len() == 2 {
-			// this is map[[2]string]string
-			elemType := fieldType.Elem()
-			typeName := elemType.String()
-
-			switch elemType.Kind() {
-			case reflect.Struct:
-				ref[typeName] = reflect.New(elemType).Interface()
-			case reflect.Pointer:
-				ref[typeName] = reflect.New(elemType.Elem()).Interface()
-			case reflect.Interface:
-				categories.InterfaceFields = append(categories.InterfaceFields, field)
-				continue
-			default:
-				categories.SimpleFields = append(categories.SimpleFields, field)
-				continue
-			}
-			// use 2 empty strings here as key, then firstFirst in unmarshaling as default
-			valueSpec, err := utils.NewValue(map[[2]string]string{{"", ""}: typeName})
-			if err != nil {
+			if err := handleMap2Field(field, fieldType, objectMap, ref, categories); err != nil {
 				return nil, err
 			}
-			objectMap[field.Name] = valueSpec
-			categories.BlockFields = append(categories.BlockFields, field)
 		} else if fieldType.Kind() == reflect.Slice || fieldType.Kind() == reflect.Map {
-			elemType := fieldType.Elem()
-			typeName := elemType.String()
-
-			switch elemType.Kind() {
-			case reflect.Struct:
-				ref[typeName] = reflect.New(elemType).Interface()
-			case reflect.Pointer:
-				ref[typeName] = reflect.New(elemType.Elem()).Interface()
-			case reflect.Interface:
-				categories.InterfaceFields = append(categories.InterfaceFields, field)
-				continue
-			default:
-				categories.SimpleFields = append(categories.SimpleFields, field)
-				continue
-			}
-
-			valueSpec, err := utils.NewValue([]string{typeName})
-			if err != nil {
+			if err := handleSliceOrMapField(field, fieldType, objectMap, ref, categories); err != nil {
 				return nil, err
 			}
-			objectMap[field.Name] = valueSpec
-			categories.BlockFields = append(categories.BlockFields, field)
 		} else {
 			categories.SimpleFields = append(categories.SimpleFields, field)
 		}
 	}
 	return categories, nil
+}
+
+func handleStructField(field reflect.StructField, fieldType reflect.Type, objectMap map[string]*utils.Value, ref map[string]any, categories *structFieldCategories) error {
+	typeName := fieldType.String()
+	ref[typeName] = reflect.New(fieldType).Interface()
+	valueSpec, err := utils.NewValue(typeName)
+	if err != nil {
+		return err
+	}
+	objectMap[field.Name] = valueSpec
+	categories.BlockFields = append(categories.BlockFields, field)
+	return nil
+}
+
+func handleMap2Field(field reflect.StructField, fieldType reflect.Type, objectMap map[string]*utils.Value, ref map[string]any, categories *structFieldCategories) error {
+	elemType := fieldType.Elem()
+	typeName := elemType.String()
+
+	switch elemType.Kind() {
+	case reflect.Struct:
+		ref[typeName] = reflect.New(elemType).Interface()
+	case reflect.Pointer:
+		ref[typeName] = reflect.New(elemType.Elem()).Interface()
+	case reflect.Interface:
+		categories.InterfaceFields = append(categories.InterfaceFields, field)
+		return nil
+	default:
+		categories.SimpleFields = append(categories.SimpleFields, field)
+		return nil
+	}
+	// use 2 empty strings here as key, then firstFirst in unmarshaling as default
+	valueSpec, err := utils.NewValue(map[[2]string]string{{"", ""}: typeName})
+	if err != nil {
+		return err
+	}
+	objectMap[field.Name] = valueSpec
+	categories.BlockFields = append(categories.BlockFields, field)
+	return nil
+}
+
+func handleSliceOrMapField(field reflect.StructField, fieldType reflect.Type, objectMap map[string]*utils.Value, ref map[string]any, categories *structFieldCategories) error {
+	elemType := fieldType.Elem()
+	typeName := elemType.String()
+
+	switch elemType.Kind() {
+	case reflect.Struct:
+		ref[typeName] = reflect.New(elemType).Interface()
+	case reflect.Pointer:
+		ref[typeName] = reflect.New(elemType.Elem()).Interface()
+	case reflect.Interface:
+		categories.InterfaceFields = append(categories.InterfaceFields, field)
+		return nil
+	default:
+		categories.SimpleFields = append(categories.SimpleFields, field)
+		return nil
+	}
+
+	valueSpec, err := utils.NewValue([]string{typeName})
+	if err != nil {
+		return err
+	}
+	objectMap[field.Name] = valueSpec
+	categories.BlockFields = append(categories.BlockFields, field)
+	return nil
 }
 
 // getLabels extracts label field values from a struct instance.
@@ -570,7 +590,7 @@ func categorizeStructFields(structType reflect.Type, objectMap map[string]*utils
 //   - current: pointer to struct instance to extract labels from
 //
 // Returns up to two label values as strings. Returns empty strings if no labels found.
-func getLabels(current interface{}) (string, string) {
+func getLabels(current any) (string, string) {
 	structType := reflect.TypeOf(current).Elem()
 	numFields := structType.NumField()
 	structValue := reflect.ValueOf(current).Elem()
@@ -581,7 +601,7 @@ func getLabels(current interface{}) (string, string) {
 		field := structType.Field(i)
 		fieldValue := structValue.Field(i)
 		tagParts := parseHCLTag(field.Tag)
-		if strings.ToLower(tagParts[1]) == TagModifierLabel {
+		if strings.ToLower(tagParts[1]) == tagModifierLabel {
 			if labelCount == 0 {
 				key0 = fieldValue.String()
 			} else {

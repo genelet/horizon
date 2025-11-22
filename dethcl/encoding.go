@@ -3,6 +3,7 @@ package dethcl
 import (
 	"fmt"
 	"reflect"
+	"sort"
 	"strings"
 
 	"github.com/genelet/horizon/utils"
@@ -12,15 +13,15 @@ import (
 type mapStructureType int
 
 const (
-	notAMap         mapStructureType = 0 // Not a map
-	shallowMap      mapStructureType = 1 // Map with non-map values
-	nestedMap       mapStructureType = 2 // Map with all values being maps
+	notAMap    mapStructureType = 0 // Not a map
+	shallowMap mapStructureType = 1 // Map with non-map values
+	nestedMap  mapStructureType = 2 // Map with all values being maps
 )
 
 // classifyMapStructure determines if an item is a map and what type of map it is.
 // Returns the map type and the map itself (nil if not a map).
-func classifyMapStructure(item interface{}) (mapStructureType, map[string]interface{}) {
-	m, ok := item.(map[string]interface{})
+func classifyMapStructure(item any) (mapStructureType, map[string]any) {
+	m, ok := item.(map[string]any)
 	if !ok {
 		return notAMap, nil
 	}
@@ -32,7 +33,7 @@ func classifyMapStructure(item interface{}) (mapStructureType, map[string]interf
 	// Check if all values are maps
 	allMaps := true
 	for _, v := range m {
-		if _, ok := v.(map[string]interface{}); !ok {
+		if _, ok := v.(map[string]any); !ok {
 			allMaps = false
 			break
 		}
@@ -46,7 +47,7 @@ func classifyMapStructure(item interface{}) (mapStructureType, map[string]interf
 
 // isHashAll is deprecated. Use classifyMapStructure instead.
 // Maintained for backward compatibility.
-func isHashAll(item interface{}) (int, map[string]interface{}) {
+func isHashAll(item any) (int, map[string]any) {
 	typ, m := classifyMapStructure(item)
 	return int(typ), m
 }
@@ -56,7 +57,7 @@ func isHashAll(item interface{}) (int, map[string]interface{}) {
 // Returns: (primitiveString, recursiveBytes, error)
 // - If primitiveString != "", use that (it's a simple value)
 // - If recursiveBytes != nil, use that (it's a complex value)
-func encodePrimitiveOrRecurse(item interface{}, equal bool, level int) (string, []byte, error) {
+func encodePrimitiveOrRecurse(item any, equal bool, level int) (string, []byte, error) {
 	switch item.(type) {
 	case string:
 		return fmt.Sprintf("\"%s\"", item), nil, nil
@@ -86,48 +87,50 @@ func encodePrimitiveOrRecurse(item interface{}, equal bool, level int) (string, 
 	return "", bs, err
 }
 
-func loopHash(arr *[]string, name string, item interface{}, equal bool, depth, level int, keyname ...string) error {
-	found, next := isHashAll(item)
-	if depth >= 2 && found == 2 {
-		found = 1
+func loopHash(lines *[]string, header string, item any, equal bool, depth, level int, keyname ...string) error {
+	mapType, nextMap := classifyMapStructure(item)
+
+	// Limit HCL labels to 2. If deeper, treat as block body.
+	if depth >= 2 && mapType == nestedMap {
+		mapType = shallowMap
 	}
-	switch found {
-	case 2:
-		for key, value := range next {
-			name2 := name + ` "` + key + `"`
-			err := loopHash(arr, name2, value, false, depth+1, level)
+
+	switch mapType {
+	case nestedMap:
+		// Sort keys for deterministic output
+		keys := make([]string, 0, len(nextMap))
+		for k := range nextMap {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+
+		for _, key := range keys {
+			value := nextMap[key]
+			nextHeader := header + ` "` + key + `"`
+			err := loopHash(lines, nextHeader, value, false, depth+1, level)
 			if err != nil {
 				return err
 			}
 		}
-	case 1:
-		// pass 'name' as the keyname to the next 'default' below
-		bs, err := marshalLevel(item, equal, level+1, name)
+	case shallowMap:
+		// pass 'header' as the keyname to the next 'default' below
+		bs, err := marshalLevel(item, equal, level+1, header)
 		if err != nil {
 			return err
 		}
-		/*
-			var str string
-			if equal || depth < 1 {
-				str = "="
-			}
-			// this is the only place where 'equal' matters. if we don't care about it,
-			// we can just remove variable 'equal' from functions encoding and loopHash.
-			*arr = append(*arr, fmt.Sprintf("%s %s %s", name, str, bs))
-		*/
-		*arr = append(*arr, fmt.Sprintf("%s %s", name, bs))
+		*lines = append(*lines, fmt.Sprintf("%s %s", header, bs))
 	default:
 		str, bs, err := encodePrimitiveOrRecurse(item, equal, level)
 		if err != nil {
 			return err
 		}
-		if bs != nil && keyname != nil && matchlast(keyname[0], string(bs)) {
+		if bs != nil && len(keyname) > 0 && matchlast(keyname[0], string(bs)) {
 			return nil
 		}
 		if str != "" {
-			*arr = append(*arr, fmt.Sprintf("%s = %s", name, str))
+			*lines = append(*lines, fmt.Sprintf("%s = %s", header, str))
 		} else {
-			*arr = append(*arr, fmt.Sprintf("%s = %s", name, bs))
+			*lines = append(*lines, fmt.Sprintf("%s = %s", header, bs))
 		}
 	}
 	return nil
@@ -139,13 +142,11 @@ func matchlast(keyname string, name string) bool {
 	return keyname == name
 }
 
-func encoding(current interface{}, equal bool, level int, keyname ...string) ([]byte, error) {
+func encoding(current any, equal bool, level int, keyname ...string) ([]byte, error) {
 	var str string
 	if current == nil {
 		return nil, nil
 	}
-	leading := strings.Repeat("  ", level+1)
-	lessLeading := strings.Repeat("  ", level)
 
 	rv := reflect.ValueOf(current)
 	switch rv.Kind() {
@@ -154,59 +155,9 @@ func encoding(current interface{}, equal bool, level int, keyname ...string) ([]
 	case reflect.Pointer:
 		return marshalLevel(rv.Elem().Interface(), equal, level, keyname...)
 	case reflect.Map:
-		var arr []string
-		iter := rv.MapRange()
-		for iter.Next() {
-			key := iter.Key()
-			if key.Kind() != reflect.String {
-				return nil, fmt.Errorf("map key must be string, got %v", key.Kind())
-			}
-			switch iter.Value().Kind() {
-			case reflect.Interface, reflect.Ptr, reflect.Map, reflect.Slice, reflect.Func:
-				if iter.Value().IsNil() {
-					arr = append(arr, fmt.Sprintf("%s = null()", key.String()))
-					continue
-				}
-			default:
-			}
-			if keyname != nil && keyname[0] == MarkerNoBrackets {
-				str, bs, err := encodePrimitiveOrRecurse(iter.Value().Interface(), equal, level)
-				if err != nil {
-					return nil, err
-				}
-				if str != "" {
-					arr = append(arr, fmt.Sprintf("%s = %s", key.String(), str))
-				} else {
-					arr = append(arr, fmt.Sprintf("%s = %s", key.String(), bs))
-				}
-			} else {
-				err := loopHash(&arr, key.String(), iter.Value().Interface(), equal, 0, level, keyname...)
-				if err != nil {
-					return nil, err
-				}
-			}
-		}
-		if level == 0 {
-			str = fmt.Sprintf("\n%s\n%s", leading+strings.Join(arr, "\n"+leading), lessLeading)
-		} else {
-			str = fmt.Sprintf("{\n%s\n%s}", leading+strings.Join(arr, "\n"+leading), lessLeading)
-		}
+		return encodeMap(rv, equal, level, keyname...)
 	case reflect.Slice, reflect.Array:
-		var arr []string
-		for i := 0; i < rv.Len(); i++ {
-			bs, err := marshalLevel(rv.Index(i).Interface(), true, level+1, MarkerNoBrackets)
-			if err != nil {
-				return nil, err
-			}
-			item := `[]`
-			if bs != nil {
-				item = string(bs)
-			}
-			arr = append(arr, item)
-		}
-		str = fmt.Sprintf("[\n%s\n%s]", leading+strings.Join(arr, ",\n"+leading), lessLeading)
-		// both the above and the following code are correct
-		// str = fmt.Sprintf("[%s]", strings.Join(arr, ", "))
+		return encodeSlice(rv, level)
 	case reflect.String, reflect.Bool, reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr, reflect.Float32, reflect.Float64:
 		var err error
 		str, _, err = encodePrimitiveOrRecurse(current, equal, level)
@@ -217,5 +168,70 @@ func encoding(current interface{}, equal bool, level int, keyname ...string) ([]
 		return nil, fmt.Errorf("data type %v not supported", rv.Kind())
 	}
 
+	return []byte(str), nil
+}
+
+func encodeMap(rv reflect.Value, equal bool, level int, keyname ...string) ([]byte, error) {
+	var arr []string
+	iter := rv.MapRange()
+	for iter.Next() {
+		key := iter.Key()
+		if key.Kind() != reflect.String {
+			return nil, fmt.Errorf("map key must be string, got %v", key.Kind())
+		}
+		switch iter.Value().Kind() {
+		case reflect.Interface, reflect.Ptr, reflect.Map, reflect.Slice, reflect.Func:
+			if iter.Value().IsNil() {
+				arr = append(arr, fmt.Sprintf("%s = null()", key.String()))
+				continue
+			}
+		default:
+		}
+		if len(keyname) > 0 && keyname[0] == markerNoBrackets {
+			str, bs, err := encodePrimitiveOrRecurse(iter.Value().Interface(), equal, level)
+			if err != nil {
+				return nil, err
+			}
+			if str != "" {
+				arr = append(arr, fmt.Sprintf("%s = %s", key.String(), str))
+			} else {
+				arr = append(arr, fmt.Sprintf("%s = %s", key.String(), bs))
+			}
+		} else {
+			err := loopHash(&arr, key.String(), iter.Value().Interface(), equal, 0, level, keyname...)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	leading := strings.Repeat("  ", level+1)
+	lessLeading := strings.Repeat("  ", level)
+	var str string
+	if level == 0 {
+		str = fmt.Sprintf("\n%s\n%s", leading+strings.Join(arr, "\n"+leading), lessLeading)
+	} else {
+		str = fmt.Sprintf("{\n%s\n%s}", leading+strings.Join(arr, "\n"+leading), lessLeading)
+	}
+	return []byte(str), nil
+}
+
+func encodeSlice(rv reflect.Value, level int) ([]byte, error) {
+	var arr []string
+	for i := 0; i < rv.Len(); i++ {
+		bs, err := marshalLevel(rv.Index(i).Interface(), true, level+1, markerNoBrackets)
+		if err != nil {
+			return nil, err
+		}
+		item := `[]`
+		if bs != nil {
+			item = string(bs)
+		}
+		arr = append(arr, item)
+	}
+
+	leading := strings.Repeat("  ", level+1)
+	lessLeading := strings.Repeat("  ", level)
+	str := fmt.Sprintf("[\n%s\n%s]", leading+strings.Join(arr, ",\n"+leading), lessLeading)
 	return []byte(str), nil
 }

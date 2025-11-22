@@ -10,7 +10,7 @@ import (
 // clone creates a shallow copy of a struct value by copying all settable fields.
 // The input must be a pointer to a struct.
 // Returns a new pointer to a struct of the same type with copied field values.
-func clone(old interface{}) interface{} {
+func clone(old any) any {
 	obj := reflect.New(reflect.TypeOf(old).Elem())
 	oldVal := reflect.ValueOf(old).Elem()
 	newVal := obj.Elem()
@@ -29,8 +29,8 @@ func clone(old interface{}) interface{} {
 // Example: `hcl:"name,label"` returns ["name", "label"]
 func parseHCLTag(tag reflect.StructTag) [2]string {
 	for _, tagStr := range strings.Fields(string(tag)) {
-		if len(tagStr) >= TagPrefixHCLLength && strings.ToLower(tagStr[:TagPrefixHCLLength]) == TagPrefixHCL {
-			tagStr = tagStr[TagPrefixHCLLength : len(tagStr)-1]
+		if len(tagStr) >= tagPrefixHCLLength && strings.ToLower(tagStr[:tagPrefixHCLLength]) == tagPrefixHCL {
+			tagStr = tagStr[tagPrefixHCLLength : len(tagStr)-1]
 			parts := strings.SplitN(tagStr, ",", 2)
 			if len(parts) == 2 {
 				return [2]string{parts[0], parts[1]}
@@ -51,5 +51,5 @@ func extractHCLTagName(tag reflect.StructTag) []byte {
 // Used internally for parsing HCL fragments that don't have a source file.
 // Format: <random-number>.hcl
 func generateTempHCLFileName() string {
-	return fmt.Sprintf("%d%s", rand.Int(), HCLFileExtension)
+	return fmt.Sprintf("%d%s", rand.Int(), hclFileExtension)
 }

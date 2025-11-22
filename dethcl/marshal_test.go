@@ -59,9 +59,9 @@ func TestMHclShape(t *testing.T) {
 `
 	g := &geo{}
 	c := &circle{}
-	ref := map[string]interface{}{"circle": c}
+	ref := map[string]any{"circle": c}
 	spec, err := utils.NewStruct(
-		"geo", map[string]interface{}{"Shape": "circle"})
+		"geo", map[string]any{"Shape": "circle"})
 	if err == nil {
 		err = UnmarshalSpec([]byte(data1), g, spec, ref)
 	}
@@ -91,9 +91,9 @@ func TestMHclMoreShape(t *testing.T) {
 	g := &geo{}
 	c := &circle{}
 	s := &square{}
-	ref := map[string]interface{}{"circle": c, "square": s}
+	ref := map[string]any{"circle": c, "square": s}
 	spec, err := utils.NewStruct(
-		"geo", map[string]interface{}{"Shape": "square"})
+		"geo", map[string]any{"Shape": "square"})
 	if err == nil {
 		err = UnmarshalSpec([]byte(data2), g, spec, ref)
 	}
@@ -125,7 +125,7 @@ func TestMHclMoreShape(t *testing.T) {
 `
 	p := &picture{}
 	spec, err = utils.NewStruct(
-		"Picture", map[string]interface{}{
+		"Picture", map[string]any{
 			"Drawings": []string{"square", "square"}})
 	if err != nil {
 		t.Fatal(err)
@@ -164,7 +164,7 @@ func TestMHclMoreShape(t *testing.T) {
 
 	p = &picture{}
 	spec, err = utils.NewStruct(
-		"Picture", map[string]interface{}{
+		"Picture", map[string]any{
 			"Drawings": []string{"moresquare", "moresquare"}})
 	if err != nil {
 		t.Fatal(err)
@@ -205,9 +205,9 @@ func TestMHash(t *testing.T) {
 	}
 `
 	g := &geometry{}
-	ref := map[string]interface{}{"square": new(square)}
+	ref := map[string]any{"square": new(square)}
 	spec, err := utils.NewStruct(
-		"geometry", map[string]interface{}{
+		"geometry", map[string]any{
 			"Shapes": []string{"square", "square"}})
 	if err == nil {
 		err = UnmarshalSpec([]byte(data3), g, spec, ref)
@@ -254,9 +254,9 @@ func TestMPointerHash(t *testing.T) {
 	}
 `
 	g := &geometry{}
-	ref := map[string]interface{}{"square": new(square)}
+	ref := map[string]any{"square": new(square)}
 	spec, err := utils.NewStruct(
-		"geometry", map[string]interface{}{
+		"geometry", map[string]any{
 			"Shapes": []string{"square", "square"}})
 	if err == nil {
 		err = UnmarshalSpec([]byte(data3), g, spec, ref)
@@ -466,35 +466,35 @@ y11 k6 {
 
 `
 	spec, err := utils.NewStruct(
-		"frame", map[string]interface{}{
-			"X1": [2]interface{}{
-				"geo", map[string]interface{}{"Shape": "circle"},
+		"frame", map[string]any{
+			"X1": [2]any{
+				"geo", map[string]any{"Shape": "circle"},
 			},
-			"X2": [2]interface{}{
-				"geo", map[string]interface{}{"Shape": "circle"},
+			"X2": [2]any{
+				"geo", map[string]any{"Shape": "circle"},
 			},
-			"X3": [][2]interface{}{
-				{"geo", map[string]interface{}{"Shape": "circle"}},
-				{"geo", map[string]interface{}{"Shape": "circle"}},
+			"X3": [][2]any{
+				{"geo", map[string]any{"Shape": "circle"}},
+				{"geo", map[string]any{"Shape": "circle"}},
 			},
-			"X4": [][2]interface{}{
-				{"geo", map[string]interface{}{"Shape": "circle"}},
-				{"geo", map[string]interface{}{"Shape": "circle"}},
+			"X4": [][2]any{
+				{"geo", map[string]any{"Shape": "circle"}},
+				{"geo", map[string]any{"Shape": "circle"}},
 			},
-			"X5": [][2]interface{}{
-				{"geo", map[string]interface{}{"Shape": "circle"}},
-				{"geo", map[string]interface{}{"Shape": "circle"}},
+			"X5": [][2]any{
+				{"geo", map[string]any{"Shape": "circle"}},
+				{"geo", map[string]any{"Shape": "circle"}},
 			},
-			"X6": [][2]interface{}{
-				{"geo", map[string]interface{}{"Shape": "circle"}},
-				{"geo", map[string]interface{}{"Shape": "circle"}},
+			"X6": [][2]any{
+				{"geo", map[string]any{"Shape": "circle"}},
+				{"geo", map[string]any{"Shape": "circle"}},
 			},
 		})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	ref := map[string]interface{}{"geo": &geo{}, "circle": &circle{}, "frame": &frame{}}
+	ref := map[string]any{"geo": &geo{}, "circle": &circle{}, "frame": &frame{}}
 
 	f := new(frame)
 	err = UnmarshalSpec([]byte(data1), f, spec, ref)
@@ -526,14 +526,14 @@ brand {
 }
 `
 
-	ref := map[string]interface{}{"geo": &geo{}, "circle": &circle{}, "toy": &toy{}}
+	ref := map[string]any{"geo": &geo{}, "circle": &circle{}, "toy": &toy{}}
 	c := new(child)
 	spec, err := utils.NewStruct(
-		"child1", map[string]interface{}{
-			"Brand": [2]interface{}{
-				"toy", map[string]interface{}{
-					"Geo": [2]interface{}{
-						"geo", map[string]interface{}{"Shape": "circle"}}}}})
+		"child1", map[string]any{
+			"Brand": [2]any{
+				"toy", map[string]any{
+					"Geo": [2]any{
+						"geo", map[string]any{"Shape": "circle"}}}}})
 	if err == nil {
 		err = UnmarshalSpec([]byte(data1), c, spec, ref)
 	}
@@ -573,10 +573,10 @@ func TestMHclPainting(t *testing.T) {
 	}
 `
 
-	ref := map[string]interface{}{"square": new(square)}
+	ref := map[string]any{"square": new(square)}
 	p := &config{}
 	spec, err := utils.NewStruct(
-		"config", map[string]interface{}{
+		"config", map[string]any{
 			"Drawings": []string{"square", "square"}})
 	if err == nil {
 		err = UnmarshalSpec([]byte(data4), p, spec, ref)
@@ -603,7 +603,7 @@ func TestMHclPainting(t *testing.T) {
 }
 
 func TestZeroFalseSimple(t *testing.T) {
-	hash := map[string]interface{}{
+	hash := map[string]any{
 		"request_id":     "2e7a9b1d-a8d6-4ce4-6380-47c05cf1d16e",
 		"lease_id":       "",
 		"renewable":      false,
@@ -614,7 +614,7 @@ func TestZeroFalseSimple(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	x := make(map[string]interface{})
+	x := make(map[string]any)
 	err = Unmarshal(bs, &x)
 	if err != nil {
 		t.Fatal(err)
@@ -631,7 +631,7 @@ func TestZeroFalseSimple(t *testing.T) {
 
 func TestZeroFalseMore(t *testing.T) {
 	data := `{"request_id":"2e7a9b1d-a8d6-4ce4-6380-47c05cf1d16e","lease_id":"","renewable":false,"lease_duration":0,"data":null,"wrap_info":null,"warnings":null,"auth":{"client_token":"hvs.","accessor":"xxx","policies":["adv_policy","default"],"token_policies":["adv_policy","default"],"identity_policies":["adv_policy"],"metadata":{"username":"peter_001@kinet.com"},"lease_duration":36000,"renewable":true,"entity_id":"70debb54-a346-06c6-7c22-26bf330aa3c8","token_type":"service","orphan":true,"mfa_requirement":null,"num_uses":0},"mount_type":""}`
-	hash := make(map[string]interface{})
+	hash := make(map[string]any)
 	err := json.Unmarshal([]byte(data), &hash)
 	if err != nil {
 		t.Fatal(err)
@@ -640,7 +640,7 @@ func TestZeroFalseMore(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	x := make(map[string]interface{})
+	x := make(map[string]any)
 	err = Unmarshal(bs, &x)
 	if err != nil {
 		t.Fatal(err)
@@ -667,8 +667,8 @@ func TestZeroFalseMore(t *testing.T) {
 }
 
 type response struct {
-	BodyData    map[string]interface{} `hcl:"body_data,block"`
-	HeadersData map[string][]string    `hcl:"headers_data,optional"`
+	BodyData    map[string]any      `hcl:"body_data,block"`
+	HeadersData map[string][]string `hcl:"headers_data,optional"`
 }
 
 func TestZeroFalseMore2(t *testing.T) {
@@ -719,13 +719,13 @@ func TestZeroFalseMore2(t *testing.T) {
 }
 
 type rspn struct {
-	Method              string                 `hcl:"method,optional" json:"method,omitempty"`
-	Path                string                 `hcl:"path,optional" json:"path,omitempty"`
-	Payload             string                 `hcl:"payload,optional" json:"payload,omitempty"`
-	HeadersData         map[string][]string    `hcl:"request_headers,optional" json:"request_headers,omitempty"`
-	StatusCode          int                    `hcl:"status_code,optional" json:"status_code,omitempty"`
-	ResponseBodyData    map[string]interface{} `hcl:"response_data,block" json:"response_data,omitempty"`
-	ResponseHeadersData map[string][]string    `hcl:"response_headers,optional" json:"response_headers,omitempty"`
+	Method              string              `hcl:"method,optional" json:"method,omitempty"`
+	Path                string              `hcl:"path,optional" json:"path,omitempty"`
+	Payload             string              `hcl:"payload,optional" json:"payload,omitempty"`
+	HeadersData         map[string][]string `hcl:"request_headers,optional" json:"request_headers,omitempty"`
+	StatusCode          int                 `hcl:"status_code,optional" json:"status_code,omitempty"`
+	ResponseBodyData    map[string]any      `hcl:"response_data,block" json:"response_data,omitempty"`
+	ResponseHeadersData map[string][]string `hcl:"response_headers,optional" json:"response_headers,omitempty"`
 }
 
 func TestResponseUnmarshal(t *testing.T) {

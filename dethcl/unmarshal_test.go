@@ -31,9 +31,9 @@ func TestHclShape1(t *testing.T) {
 `
 	g := &geo{}
 	c := &circle{}
-	ref := map[string]interface{}{"circle": c}
+	ref := map[string]any{"circle": c}
 	spec, err := utils.NewStruct(
-		"geo", map[string]interface{}{"Shape": "circle"})
+		"geo", map[string]any{"Shape": "circle"})
 	if err == nil {
 		err = UnmarshalSpec([]byte(data1), g, spec, ref)
 	}
@@ -53,9 +53,9 @@ func TestHclShape1(t *testing.T) {
 `
 	g = &geo{}
 	s := &square{}
-	ref = map[string]interface{}{"circle": c, "square": s}
+	ref = map[string]any{"circle": c, "square": s}
 	spec, err = utils.NewStruct(
-		"geo", map[string]interface{}{"Shape": "square"})
+		"geo", map[string]any{"Shape": "square"})
 	if err == nil {
 		err = UnmarshalSpec([]byte(data2), g, spec, ref)
 	}
@@ -81,7 +81,7 @@ func TestHclShape2(t *testing.T) {
 `
 	p := &picture{}
 	spec, err := utils.NewStruct(
-		"Picture", map[string]interface{}{
+		"Picture", map[string]any{
 			"Drawings": []string{"square", "square"}})
 	if err != nil {
 		t.Fatal(err)
@@ -90,7 +90,7 @@ func TestHclShape2(t *testing.T) {
 	g := &geo{}
 	s := &square{}
 	c := &circle{}
-	ref := map[string]interface{}{"geo": g, "circle": c, "square": s}
+	ref := map[string]any{"geo": g, "circle": c, "square": s}
 	err = UnmarshalSpec([]byte(data4), p, spec, ref)
 	if err != nil {
 		t.Fatal(err)
@@ -116,7 +116,7 @@ func TestHclShape2(t *testing.T) {
 `
 	p = &picture{}
 	spec, err = utils.NewStruct(
-		"Picture", map[string]interface{}{
+		"Picture", map[string]any{
 			"Drawings": []string{"moresquare", "moresquare"}})
 	if err != nil {
 		t.Fatal(err)
@@ -234,10 +234,10 @@ func TestHash(t *testing.T) {
 		sy = 8
 	}
 `
-	ref := map[string]interface{}{"square": new(square)}
+	ref := map[string]any{"square": new(square)}
 	g := &geometry{}
 	spec, err := utils.NewStruct(
-		"geometry", map[string]interface{}{
+		"geometry", map[string]any{
 			"Shapes": []string{"square", "square"}})
 	if err == nil {
 		err = UnmarshalSpec([]byte(data3), g, spec, ref)
@@ -399,35 +399,35 @@ y11 k7 {
 
 `
 	spec, err := utils.NewStruct(
-		"frame", map[string]interface{}{
-			"X1": [2]interface{}{
-				"geo", map[string]interface{}{"Shape": "circle"},
+		"frame", map[string]any{
+			"X1": [2]any{
+				"geo", map[string]any{"Shape": "circle"},
 			},
-			"X2": [2]interface{}{
-				"geo", map[string]interface{}{"Shape": "circle"},
+			"X2": [2]any{
+				"geo", map[string]any{"Shape": "circle"},
 			},
-			"X3": [][2]interface{}{
-				{"geo", map[string]interface{}{"Shape": "circle"}},
-				{"geo", map[string]interface{}{"Shape": "circle"}},
+			"X3": [][2]any{
+				{"geo", map[string]any{"Shape": "circle"}},
+				{"geo", map[string]any{"Shape": "circle"}},
 			},
-			"X4": [][2]interface{}{
-				{"geo", map[string]interface{}{"Shape": "circle"}},
-				{"geo", map[string]interface{}{"Shape": "circle"}},
+			"X4": [][2]any{
+				{"geo", map[string]any{"Shape": "circle"}},
+				{"geo", map[string]any{"Shape": "circle"}},
 			},
-			"X5": [][2]interface{}{
-				{"geo", map[string]interface{}{"Shape": "circle"}},
-				{"geo", map[string]interface{}{"Shape": "circle"}},
+			"X5": [][2]any{
+				{"geo", map[string]any{"Shape": "circle"}},
+				{"geo", map[string]any{"Shape": "circle"}},
 			},
-			"X6": [][2]interface{}{
-				{"geo", map[string]interface{}{"Shape": "circle"}},
-				{"geo", map[string]interface{}{"Shape": "circle"}},
+			"X6": [][2]any{
+				{"geo", map[string]any{"Shape": "circle"}},
+				{"geo", map[string]any{"Shape": "circle"}},
 			},
 		})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	ref := map[string]interface{}{"geo": &geo{}, "circle": &circle{}, "frame": &frame{}}
+	ref := map[string]any{"geo": &geo{}, "circle": &circle{}, "frame": &frame{}}
 
 	f := new(frame)
 	err = UnmarshalSpec([]byte(data1), f, spec, ref)
@@ -463,14 +463,14 @@ brand {
 	}
 }
 `
-	ref := map[string]interface{}{"geo": &geo{}, "circle": &circle{}, "toy": &toy{}}
+	ref := map[string]any{"geo": &geo{}, "circle": &circle{}, "toy": &toy{}}
 	c := new(child)
 	spec, err := utils.NewStruct(
-		"child1", map[string]interface{}{
-			"Brand": [2]interface{}{
-				"toy", map[string]interface{}{
-					"Geo": [2]interface{}{
-						"geo", map[string]interface{}{"Shape": "circle"}}}}})
+		"child1", map[string]any{
+			"Brand": [2]any{
+				"toy", map[string]any{
+					"Geo": [2]any{
+						"geo", map[string]any{"Shape": "circle"}}}}})
 	if err == nil {
 		err = UnmarshalSpec([]byte(data1), c, spec, ref)
 	}
@@ -496,14 +496,14 @@ brand = {
 	}
 }
 `
-	ref := map[string]interface{}{"geo": &geo{}, "circle": &circle{}, "toy": &toy{}}
+	ref := map[string]any{"geo": &geo{}, "circle": &circle{}, "toy": &toy{}}
 	c := new(child)
 	spec, err := utils.NewStruct(
-		"child1", map[string]interface{}{
-			"Brand": [2]interface{}{
-				"toy", map[string]interface{}{
-					"Geo": [2]interface{}{
-						"geo", map[string]interface{}{"Shape": "circle"}}}}})
+		"child1", map[string]any{
+			"Brand": [2]any{
+				"toy", map[string]any{
+					"Geo": [2]any{
+						"geo", map[string]any{"Shape": "circle"}}}}})
 	if err == nil {
 		err = UnmarshalSpec([]byte(data1), c, spec, ref)
 	}
@@ -530,13 +530,13 @@ brand = {
 }
 }`
 
-	c := map[string]interface{}{}
+	c := map[string]any{}
 	err := Unmarshal([]byte(data1), &c)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if c["age"].(int) != 5 || c["brand"].(map[string]interface{})["geo"].(map[string]interface{})["shape"].(map[string]interface{})["radius"].(float64) != 1.234 {
+	if c["age"].(int) != 5 || c["brand"].(map[string]any)["geo"].(map[string]any)["shape"].(map[string]any)["radius"].(float64) != 1.234 {
 		t.Errorf("%#v", c)
 	}
 }
@@ -588,8 +588,8 @@ func TestMapList(t *testing.T) {
 	n := typ.NumField()
 	oriValue := reflect.ValueOf(x).Elem()
 
-	ref := make(map[string]interface{})
-	spec := make(map[string]interface{})
+	ref := make(map[string]any)
+	spec := make(map[string]any)
 
 	for i := 0; i < n; i++ {
 		field := typ.Field(i)

@@ -46,8 +46,8 @@ func testYAMLConversions(t *testing.T, fn string) {
 		t.Fatalf("error: %v\n", err)
 	}
 
-	hclmap := map[string]interface{}{}
-	expectedmap := map[string]interface{}{}
+	hclmap := map[string]any{}
+	expectedmap := map[string]any{}
 	err = dethcl.Unmarshal(hcl, &hclmap)
 	if err != nil {
 		t.Fatalf("error: %v\n", err)
@@ -99,8 +99,8 @@ func testHCLConversions(t *testing.T, fn string) {
 		t.Fatalf("error: %v\n", err)
 	}
 
-	ymlmap := map[string]interface{}{}
-	expectedmap := map[string]interface{}{}
+	ymlmap := map[string]any{}
+	expectedmap := map[string]any{}
 	err = yaml.Unmarshal(rawyml, &ymlmap)
 	if err != nil {
 		t.Fatalf("error: %v\n", err)
@@ -130,7 +130,7 @@ func testHCLRoundTrip(t *testing.T, fn string) {
 		t.Fatalf("error: %v\n", err)
 	}
 
-	hash := map[string]interface{}{}
+	hash := map[string]any{}
 	err = dethcl.Unmarshal(raw, &hash)
 	if err != nil {
 		t.Fatalf("error: %v\n", err)
@@ -140,7 +140,7 @@ func testHCLRoundTrip(t *testing.T, fn string) {
 		t.Fatalf("error: %v\n", err)
 	}
 
-	hash1 := map[string]interface{}{}
+	hash1 := map[string]any{}
 	err = dethcl.Unmarshal(bs, &hash1)
 	if err != nil {
 		t.Fatalf("error: %v\n", err)

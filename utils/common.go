@@ -8,11 +8,11 @@ import (
 // typeSpec represents a type specification for a single struct field.
 // It's a 2-element array where:
 //   - [0]: struct class name (string)
-//   - [1]: optional field specifications (map[string]interface{})
-type typeSpec [2]interface{}
+//   - [1]: optional field specifications (map[string]any)
+type typeSpec [2]any
 
 // createTypeSpec creates a typeSpec from a class name and optional field specifications.
-func createTypeSpec(className string, fields ...map[string]interface{}) typeSpec {
+func createTypeSpec(className string, fields ...map[string]any) typeSpec {
 	spec := typeSpec{className}
 	if len(fields) > 0 && fields[0] != nil {
 		spec[1] = fields[0]
@@ -34,9 +34,9 @@ func createTypeSpec(className string, fields ...map[string]interface{}) typeSpec
 //	║ []string                  │ ending ListStruct value      ║
 //	║ map[string]string         │ ending MapStruct value       ║
 //	║                           │                              ║
-//	║ [2]interface{}            │ SingleStruct value           ║
-//	║ [][2]interface{}          │ ListStruct value             ║
-//	║ map[string][2]interface{} │ MapStruct value              ║
+//	║ [2]any                    │ SingleStruct value           ║
+//	║ [][2]any                  │ ListStruct value             ║
+//	║ map[string][2]any         │ MapStruct value              ║
 //	║                           │                              ║
 //	║ *Struct                   │ SingleStruct                 ║
 //	║ []*Struct                 │ ListStruct                   ║
@@ -50,7 +50,7 @@ func createTypeSpec(className string, fields ...map[string]interface{}) typeSpec
 //   - map[string]string{"k1": "square"} → MapStruct
 //
 // Returns an error if the input type is not supported.
-func NewValue(v interface{}) (*Value, error) {
+func NewValue(v any) (*Value, error) {
 	if v == nil {
 		return nil, fmt.Errorf("cannot create Value from nil")
 	}
@@ -59,25 +59,25 @@ func NewValue(v interface{}) (*Value, error) {
 	case string:
 		return newValueFromString(typedValue)
 
-	case [2]interface{}:
+	case [2]any:
 		return newValueFromTypeSpec(typedValue)
 
 	case []string:
 		return newValueFromStringSlice(typedValue)
 
-	case [][2]interface{}:
+	case [][2]any:
 		return newValueFromTypeSpecSlice(typedValue)
 
 	case map[string]string:
 		return newValueFromStringMap(typedValue)
 
-	case map[string][2]interface{}:
+	case map[string][2]any:
 		return newValueFromTypeSpecMap(typedValue)
 
 	case map[[2]string]string:
 		return newValueFromString2DMap(typedValue)
 
-	case map[[2]string][2]interface{}:
+	case map[[2]string][2]any:
 		return newValueFromTypeSpec2DMap(typedValue)
 
 	case *Struct:
@@ -117,7 +117,7 @@ func newValueFromTypeSpec(spec typeSpec) (*Value, error) {
 
 // newValueFromStringSlice creates a Value from a slice of string class names.
 func newValueFromStringSlice(classNames []string) (*Value, error) {
-	specs := make([][2]interface{}, len(classNames))
+	specs := make([][2]any, len(classNames))
 	for i, className := range classNames {
 		specs[i] = createTypeSpec(className)
 	}
@@ -125,7 +125,7 @@ func newValueFromStringSlice(classNames []string) (*Value, error) {
 }
 
 // newValueFromTypeSpecSlice creates a Value from a slice of type specifications.
-func newValueFromTypeSpecSlice(specs [][2]interface{}) (*Value, error) {
+func newValueFromTypeSpecSlice(specs [][2]any) (*Value, error) {
 	listStruct, err := newListStruct(specs)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create ListStruct: %w", err)
@@ -135,7 +135,7 @@ func newValueFromTypeSpecSlice(specs [][2]interface{}) (*Value, error) {
 
 // newValueFromStringMap creates a Value from a map of string class names.
 func newValueFromStringMap(classNames map[string]string) (*Value, error) {
-	specs := make(map[string][2]interface{}, len(classNames))
+	specs := make(map[string][2]any, len(classNames))
 	for key, className := range classNames {
 		specs[key] = createTypeSpec(className)
 	}
@@ -143,7 +143,7 @@ func newValueFromStringMap(classNames map[string]string) (*Value, error) {
 }
 
 // newValueFromTypeSpecMap creates a Value from a map of type specifications.
-func newValueFromTypeSpecMap(specs map[string][2]interface{}) (*Value, error) {
+func newValueFromTypeSpecMap(specs map[string][2]any) (*Value, error) {
 	mapStruct, err := newMapStruct(specs)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create MapStruct: %w", err)
@@ -153,7 +153,7 @@ func newValueFromTypeSpecMap(specs map[string][2]interface{}) (*Value, error) {
 
 // newValueFromString2DMap creates a Value from a 2D map of string class names.
 func newValueFromString2DMap(classNames map[[2]string]string) (*Value, error) {
-	specs := make(map[[2]string][2]interface{}, len(classNames))
+	specs := make(map[[2]string][2]any, len(classNames))
 	for key, className := range classNames {
 		specs[key] = createTypeSpec(className)
 	}
@@ -161,7 +161,7 @@ func newValueFromString2DMap(classNames map[[2]string]string) (*Value, error) {
 }
 
 // newValueFromTypeSpec2DMap creates a Value from a 2D map of type specifications.
-func newValueFromTypeSpec2DMap(specs map[[2]string][2]interface{}) (*Value, error) {
+func newValueFromTypeSpec2DMap(specs map[[2]string][2]any) (*Value, error) {
 	map2Struct, err := newMap2Struct(specs)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Map2Struct: %w", err)
@@ -182,19 +182,20 @@ func newValueFromTypeSpec2DMap(specs map[[2]string][2]interface{}) (*Value, erro
 // The map values are converted using NewValue. See NewValue for conversion rules.
 //
 // Examples:
-//   NewStruct("geo", map[string]interface{}{
-//       "Shape": "circle",  // Shape field should be a circle
-//   })
 //
-//   NewStruct("child", map[string]interface{}{
-//       "Brand": map[string][2]interface{}{
-//           "abc1": {"toy", map[string]interface{}{"Geo": ...}},
-//       },
-//   })
+//	NewStruct("geo", map[string]any{
+//	    "Shape": "circle",  // Shape field should be a circle
+//	})
+//
+//	NewStruct("child", map[string]any{
+//	    "Brand": map[string][2]any{
+//	        "abc1": {"toy", map[string]any{"Geo": ...}},
+//	    },
+//	})
 //
 // Returns a Struct that can be passed to UnmarshalSpec functions.
 // Returns an error if className is empty or field specifications are invalid.
-func NewStruct(className string, fieldSpecs ...map[string]interface{}) (*Struct, error) {
+func NewStruct(className string, fieldSpecs ...map[string]any) (*Struct, error) {
 	if className == "" {
 		return nil, fmt.Errorf("className cannot be empty")
 	}
@@ -225,9 +226,9 @@ func NewStruct(className string, fieldSpecs ...map[string]interface{}) (*Struct,
 }
 
 // newSingleStruct creates a Struct from a type specification.
-// The spec is a [2]interface{} where:
+// The spec is a [2]any where:
 //   - [0]: class name (string)
-//   - [1]: optional field specifications (map[string]interface{})
+//   - [1]: optional field specifications (map[string]any)
 func newSingleStruct(spec typeSpec) (*Struct, error) {
 	className, ok := spec[0].(string)
 	if !ok {
@@ -238,16 +239,16 @@ func newSingleStruct(spec typeSpec) (*Struct, error) {
 		return NewStruct(className)
 	}
 
-	fields, ok := spec[1].(map[string]interface{})
+	fields, ok := spec[1].(map[string]any)
 	if !ok {
-		return nil, fmt.Errorf("field specifications must be map[string]interface{}, got %T", spec[1])
+		return nil, fmt.Errorf("field specifications must be map[string]any, got %T", spec[1])
 	}
 
 	return NewStruct(className, fields)
 }
 
 // newListStruct creates a ListStruct from a slice of type specifications.
-func newListStruct(specs [][2]interface{}) (*ListStruct, error) {
+func newListStruct(specs [][2]any) (*ListStruct, error) {
 	structs := make([]*Struct, len(specs))
 
 	for i, spec := range specs {
@@ -262,7 +263,7 @@ func newListStruct(specs [][2]interface{}) (*ListStruct, error) {
 }
 
 // newMapStruct creates a MapStruct from a map of type specifications.
-func newMapStruct(specs map[string][2]interface{}) (*MapStruct, error) {
+func newMapStruct(specs map[string][2]any) (*MapStruct, error) {
 	structs := make(map[string]*Struct, len(specs))
 
 	for key, spec := range specs {
@@ -278,16 +279,16 @@ func newMapStruct(specs map[string][2]interface{}) (*MapStruct, error) {
 
 // newMap2Struct creates a Map2Struct from a 2D map of type specifications.
 // This handles nested map structures where the key is a 2-element string array.
-func newMap2Struct(specs map[[2]string][2]interface{}) (*Map2Struct, error) {
+func newMap2Struct(specs map[[2]string][2]any) (*Map2Struct, error) {
 	// Group specifications by the first key dimension
-	groupedSpecs := make(map[string]map[string][2]interface{})
+	groupedSpecs := make(map[string]map[string][2]any)
 
 	for key, spec := range specs {
 		firstKey := key[0]
 		secondKey := key[1]
 
 		if groupedSpecs[firstKey] == nil {
-			groupedSpecs[firstKey] = make(map[string][2]interface{})
+			groupedSpecs[firstKey] = make(map[string][2]any)
 		}
 		groupedSpecs[firstKey][secondKey] = spec
 	}

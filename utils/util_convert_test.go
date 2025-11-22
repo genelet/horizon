@@ -13,7 +13,7 @@ func TestConvertCtyToFieldType_NumericTypes(t *testing.T) {
 		name       string
 		ctyVal     cty.Value
 		targetType reflect.Type
-		want       interface{}
+		want       any
 	}{
 		// Integer types
 		{"int", cty.NumberIntVal(42), reflect.TypeOf(int(0)), int(42)},
@@ -53,7 +53,7 @@ func TestConvertCtyToFieldType_PrimitiveTypes(t *testing.T) {
 		name       string
 		ctyVal     cty.Value
 		targetType reflect.Type
-		want       interface{}
+		want       any
 	}{
 		{"string", cty.StringVal("hello"), reflect.TypeOf(""), "hello"},
 		{"bool_true", cty.BoolVal(true), reflect.TypeOf(false), true},
@@ -95,7 +95,7 @@ func TestConvertCtyToFieldType_MapTypes(t *testing.T) {
 		name       string
 		ctyVal     cty.Value
 		targetType reflect.Type
-		want       interface{}
+		want       any
 	}{
 		{
 			name: "map[string]string_from_object",
@@ -136,7 +136,7 @@ func TestConvertCtyToFieldType_SliceTypes(t *testing.T) {
 		name       string
 		ctyVal     cty.Value
 		targetType reflect.Type
-		want       interface{}
+		want       any
 	}{
 		{
 			name: "[]string_from_tuple",
@@ -179,7 +179,7 @@ func TestConvertCtyToFieldType_NestedTypes(t *testing.T) {
 		name       string
 		ctyVal     cty.Value
 		targetType reflect.Type
-		want       interface{}
+		want       any
 	}{
 		{
 			name: "map[string][]string_from_object_with_tuples",

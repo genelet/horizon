@@ -36,7 +36,7 @@ func TestUnmarshalMap2Struct(t *testing.T) {
 
 	// Create spec for nested field
 	spec, err := utils.NewStruct("Outer",
-		map[string]interface{}{
+		map[string]any{
 			"Nested": map[[2]string]string{{"", ""}: "Inner"},
 		},
 	)
@@ -44,7 +44,7 @@ func TestUnmarshalMap2Struct(t *testing.T) {
 		t.Fatalf("failed to create spec: %v", err)
 	}
 
-	ref := map[string]interface{}{
+	ref := map[string]any{
 		"Inner": new(Inner),
 	}
 
@@ -100,7 +100,7 @@ func TestUnmarshalMapStruct(t *testing.T) {
 	`)
 
 	spec, err := utils.NewStruct("Root",
-		map[string]interface{}{
+		map[string]any{
 			"Configs": map[string]string{"": "Config"},
 		},
 	)
@@ -108,7 +108,7 @@ func TestUnmarshalMapStruct(t *testing.T) {
 		t.Fatalf("failed to create spec: %v", err)
 	}
 
-	ref := map[string]interface{}{
+	ref := map[string]any{
 		"Config": new(Config),
 	}
 
@@ -161,7 +161,7 @@ func TestUnmarshalListStruct(t *testing.T) {
 	`)
 
 	spec, err := utils.NewStruct("Root",
-		map[string]interface{}{
+		map[string]any{
 			"Items": []string{"Item"},
 		},
 	)
@@ -169,7 +169,7 @@ func TestUnmarshalListStruct(t *testing.T) {
 		t.Fatalf("failed to create spec: %v", err)
 	}
 
-	ref := map[string]interface{}{
+	ref := map[string]any{
 		"Item": new(Item),
 	}
 
@@ -217,7 +217,7 @@ func TestUnmarshalSingleStruct(t *testing.T) {
 	`)
 
 	spec, err := utils.NewStruct("Document",
-		map[string]interface{}{
+		map[string]any{
 			"Metadata": "Metadata",
 		},
 	)
@@ -225,7 +225,7 @@ func TestUnmarshalSingleStruct(t *testing.T) {
 		t.Fatalf("failed to create spec: %v", err)
 	}
 
-	ref := map[string]interface{}{
+	ref := map[string]any{
 		"Metadata": new(Metadata),
 	}
 
@@ -264,7 +264,7 @@ func TestProcessBlockFieldsErrorMissingRef(t *testing.T) {
 	`)
 
 	spec, err := utils.NewStruct("Outer",
-		map[string]interface{}{
+		map[string]any{
 			"Nested": "Inner",
 		},
 	)
@@ -273,7 +273,7 @@ func TestProcessBlockFieldsErrorMissingRef(t *testing.T) {
 	}
 
 	// Deliberately omit "Inner" from ref map
-	ref := map[string]interface{}{}
+	ref := map[string]any{}
 
 	result := &Outer{}
 	err = UnmarshalSpec(hclData, result, spec, ref)

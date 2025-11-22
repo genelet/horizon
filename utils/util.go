@@ -49,7 +49,7 @@ func CtyToExpression(cv cty.Value, rng hcl.Range) hclsyntax.Expression {
 	return &hclsyntax.LiteralValueExpr{Val: cv, SrcRange: rng}
 }
 
-func callToCty(ref map[string]interface{}, node *Tree, funcs map[string]interface{}, u *hclsyntax.FunctionCallExpr) (cty.Value, error) {
+func callToCty(ref map[string]any, node *Tree, funcs map[string]any, u *hclsyntax.FunctionCallExpr) (cty.Value, error) {
 	if u.Name == "" {
 		return cty.EmptyObjectVal, fmt.Errorf("function call is empty")
 	}
@@ -128,7 +128,7 @@ func callToCty(ref map[string]interface{}, node *Tree, funcs map[string]interfac
 //   - v: HCL expression to evaluate
 //
 // Returns the evaluated cty.Value or an error if evaluation fails.
-func ExpressionToCty(ref map[string]interface{}, node *Tree, v hclsyntax.Expression) (cty.Value, error) {
+func ExpressionToCty(ref map[string]any, node *Tree, v hclsyntax.Expression) (cty.Value, error) {
 	if v == nil {
 		return cty.NilVal, nil
 	}
@@ -177,7 +177,7 @@ func ExpressionToCty(ref map[string]interface{}, node *Tree, v hclsyntax.Express
 			switch t := ref[FUNCTIONS].(type) {
 			case map[string]function.Function:
 				ctx.Functions = t
-			case map[string]interface{}:
+			case map[string]any:
 				return callToCty(ref, node, t, u)
 			default:
 				return cty.EmptyObjectVal, fmt.Errorf("function call is not a map for %s", u.Name)
@@ -195,18 +195,18 @@ func ExpressionToCty(ref map[string]interface{}, node *Tree, v hclsyntax.Express
 // NativeToCty converts a Go native value to a cty.Value.
 //
 // Handles conversion of:
-//   - map[string]interface{} → cty.Object
-//   - []interface{} → cty.Tuple
+//   - map[string]any → cty.Object
+//   - []any → cty.Tuple
 //   - Primitive types (string, number, bool, etc.)
 //
 // This is the inverse of CtyToNative.
-func NativeToCty(item interface{}) (cty.Value, error) {
+func NativeToCty(item any) (cty.Value, error) {
 	if item == nil {
 		return cty.EmptyObjectVal, nil
 	}
 
 	switch t := item.(type) {
-	case map[string]interface{}:
+	case map[string]any:
 		hash := make(map[string]cty.Value)
 		for k, v := range t {
 			ct, err := NativeToCty(v)
@@ -216,7 +216,7 @@ func NativeToCty(item interface{}) (cty.Value, error) {
 			hash[k] = ct
 		}
 		return cty.ObjectVal(hash), nil
-	case []interface{}:
+	case []any:
 		var arr []cty.Value
 		for _, v := range t {
 			ct, err := NativeToCty(v)
@@ -235,7 +235,7 @@ func NativeToCty(item interface{}) (cty.Value, error) {
 	return gocty.ToCtyValue(item, typ)
 }
 
-func CtyNumberToNative(val cty.Value) (interface{}, error) {
+func CtyNumberToNative(val cty.Value) (any, error) {
 	v := val.AsBigFloat()
 	if _, accuracy := v.Int64(); accuracy == big.Exact || accuracy == big.Above {
 		var x int64
@@ -264,13 +264,13 @@ func CtyNumberToNative(val cty.Value) (interface{}, error) {
 //   - cty.String → string
 //   - cty.Number → int, int64, float32, or float64 (auto-detected)
 //   - cty.Bool → bool
-//   - cty.Object/Map → map[string]interface{}
-//   - cty.List/Tuple/Set → []interface{}
+//   - cty.Object/Map → map[string]any
+//   - cty.List/Tuple/Set → []any
 //   - cty.Null → nil
 //
 // Numbers are intelligently converted to the smallest type that fits.
 // This is the inverse of NativeToCty.
-func CtyToNative(val cty.Value) (interface{}, error) {
+func CtyToNative(val cty.Value) (any, error) {
 	if val.IsNull() {
 		return nil, nil
 	}
@@ -292,7 +292,7 @@ func CtyToNative(val cty.Value) (interface{}, error) {
 
 	switch {
 	case ty.IsObjectType(), ty.IsMapType():
-		var u map[string]interface{}
+		var u map[string]any
 		for k, v := range val.AsValueMap() {
 			x, err := CtyToNative(v)
 			if err != nil {
@@ -302,13 +302,13 @@ func CtyToNative(val cty.Value) (interface{}, error) {
 				continue
 			}
 			if u == nil {
-				u = make(map[string]interface{})
+				u = make(map[string]any)
 			}
 			u[k] = x
 		}
 		return u, nil
 	case ty.IsListType(), ty.IsTupleType(), ty.IsSetType():
-		var u []interface{}
+		var u []any
 		for _, v := range val.AsValueSlice() {
 			x, err := CtyToNative(v)
 			if err != nil {
@@ -341,14 +341,14 @@ func CtyToNative(val cty.Value) (interface{}, error) {
 //   - ctyVal: the cty.Value to convert
 //   - targetType: the reflect.Type to convert to
 //
-// Returns the converted value as interface{} or an error if conversion fails.
+// Returns the converted value as any or an error if conversion fails.
 //
 // Examples:
 //   - ctyVal=5, targetType=uint16 → uint16(5)
 //   - ctyVal=3.14, targetType=float32 → float32(3.14)
 //   - ctyVal="hello", targetType=string → "hello"
 //   - ctyVal=cty.Object(...), targetType=map[string]string → map[string]string{...}
-func ConvertCtyToFieldType(ctyVal cty.Value, targetType reflect.Type) (interface{}, error) {
+func ConvertCtyToFieldType(ctyVal cty.Value, targetType reflect.Type) (any, error) {
 	if ctyVal.IsNull() {
 		return reflect.Zero(targetType).Interface(), nil
 	}
@@ -475,15 +475,15 @@ func CtyVariables(tree *Tree) map[string]cty.Value {
 //
 // Returns:
 //   - *Tree: The Tree node for storing variables (from ref[ATTRIBUTES])
-//   - map[string]interface{}: The ref map with both ATTRIBUTES and FUNCTIONS set
+//   - map[string]any: The ref map with both ATTRIBUTES and FUNCTIONS set
 //
 // Usage:
 //
 //	node, ref := NewTreeCtyFunction(nil)
 //	// Now ref[ATTRIBUTES] contains the tree and ref[FUNCTIONS] contains cty functions
-func NewTreeCtyFunction(ref map[string]interface{}) (*Tree, map[string]interface{}) {
+func NewTreeCtyFunction(ref map[string]any) (*Tree, map[string]any) {
 	if ref == nil {
-		ref = make(map[string]interface{})
+		ref = make(map[string]any)
 	}
 	var node *Tree
 	if inode, ok := ref[ATTRIBUTES]; ok {

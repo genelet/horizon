@@ -30,7 +30,7 @@ func parseFieldInfo(field reflect.StructField, value reflect.Value) *HCLFieldInf
 	modifier := tag[1]
 
 	// Check for ignore tag
-	if tagName == TagIgnore || (len(tagName) >= 2 && tagName[len(tagName)-2:] == ","+TagIgnore) {
+	if tagName == tagIgnore || (len(tagName) >= 2 && tagName[len(tagName)-2:] == ","+tagIgnore) {
 		return nil
 	}
 
@@ -39,8 +39,8 @@ func parseFieldInfo(field reflect.StructField, value reflect.Value) *HCLFieldInf
 		Value:    value,
 		TagName:  tagName,
 		Modifier: modifier,
-		IsLabel:  strings.ToLower(modifier) == TagModifierLabel,
-		IsBlock:  strings.Contains(strings.ToLower(modifier), TagModifierBlock),
+		IsLabel:  strings.ToLower(modifier) == tagModifierLabel,
+		IsBlock:  strings.Contains(strings.ToLower(modifier), tagModifierBlock),
 		IsIgnore: false,
 	}
 

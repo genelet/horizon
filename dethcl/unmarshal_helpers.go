@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 )
 
-// unmarshalToMap handles unmarshaling HCL data to a map[string]interface{}.
+// unmarshalToMap handles unmarshaling HCL data to a map[string]any.
 // Used when the target type is a dynamic map without a defined struct schema.
 //
 // The function decodes HCL into a nested map structure where:
@@ -20,42 +20,42 @@ import (
 // Parameters:
 //   - node: tree node for variable scope
 //   - dat: HCL data bytes
-//   - current: pointer to map[string]interface{} to populate
+//   - current: pointer to map[string]any to populate
 //
 // Returns error if parsing or decoding fails.
-func unmarshalToMap(node *utils.Tree, dat []byte, current interface{}) error {
+func unmarshalToMap(node *utils.Tree, dat []byte, current any) error {
 	obj, err := decodeMap(nil, node, dat)
 	if err != nil {
 		return err
 	}
-	x := current.(*map[string]interface{})
+	x := current.(*map[string]any)
 	for k, v := range obj {
 		(*x)[k] = v
 	}
 	return nil
 }
 
-// unmarshalToSlice handles unmarshaling HCL data to a []interface{}.
+// unmarshalToSlice handles unmarshaling HCL data to a []any.
 // Used when the target type is a dynamic slice without a defined element schema.
 //
 // The function decodes HCL array syntax into a slice where each element
 // can be a primitive value, nested map, or nested slice.
 //
 // For example, HCL: ["str", 123, {key = "val"}, [1, 2]]
-// Becomes: []interface{}{"str", 123, map[string]interface{}{"key": "val"}, []interface{}{1, 2}}
+// Becomes: []any{"str", 123, map[string]any{"key": "val"}, []any{1, 2}}
 //
 // Parameters:
 //   - node: tree node for variable scope
 //   - dat: HCL data bytes (should be array syntax)
-//   - current: pointer to []interface{} to append to
+//   - current: pointer to []any to append to
 //
 // Returns error if parsing or decoding fails.
-func unmarshalToSlice(node *utils.Tree, dat []byte, current interface{}) error {
+func unmarshalToSlice(node *utils.Tree, dat []byte, current any) error {
 	obj, err := decodeSlice(nil, node, dat)
 	if err != nil {
 		return err
 	}
-	x := current.(*[]interface{})
+	x := current.(*[]any)
 	*x = append(*x, obj...)
 	return nil
 }
@@ -92,8 +92,9 @@ func parseHCLFile(dat []byte) (*hcl.File, *hclsyntax.Body, error) {
 //   - Updates the tree with evaluated attribute values for reference by nested blocks
 //
 // For example, given HCL with variable references:
-//   name = var.service_name
-//   port = local.default_port
+//
+//	name = var.service_name
+//	port = local.default_port
 //
 // The function resolves these references using the tree context.
 //
@@ -104,7 +105,7 @@ func parseHCLFile(dat []byte) (*hcl.File, *hclsyntax.Body, error) {
 //   - bd: HCL body with attributes to evaluate
 //
 // Returns list of attribute names with null values (to be ignored), or error if evaluation fails.
-func evaluateExpressions(ref map[string]interface{}, node *utils.Tree, file *hcl.File, bd *hclsyntax.Body) ([]string, error) {
+func evaluateExpressions(ref map[string]any, node *utils.Tree, file *hcl.File, bd *hclsyntax.Body) ([]string, error) {
 	var kNulls []string
 	for k, v := range bd.Attributes {
 		cv, err := utils.ExpressionToCty(ref, node, v.Expr)
@@ -176,13 +177,13 @@ func processSimpleFields(newFields []reflect.StructField, rawValue reflect.Value
 	}
 }
 
-// processMapOrSliceFields handles dynamic interface fields (map[string]interface{} and []interface{}).
+// processMapOrSliceFields handles dynamic interface fields (map[string]any and []any).
 // These fields can contain any HCL structure and are decoded into generic Go types.
 //
 // The function:
 //   - Locates the field's HCL source (either attribute or block)
 //   - Extracts the raw HCL bytes for that field
-//   - Decodes into map[string]interface{} or []interface{} based on field type
+//   - Decodes into map[string]any or []any based on field type
 //   - Sets the decoded value on the target struct
 //
 // This enables flexible schemas where field contents are not known at compile time.

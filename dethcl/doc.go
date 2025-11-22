@@ -5,7 +5,7 @@
 //
 //   - Interface types with dynamic resolution at runtime
 //   - Maps with struct values (map[string]*Struct, map[[2]string]*Struct)
-//   - Slices of interfaces ([]interface{})
+//   - Slices of interfaces ([]any)
 //   - Nested structures with interface fields
 //   - HCL labels for map keys
 //   - Custom marshalers via Marshaler/Unmarshaler interfaces
@@ -45,12 +45,12 @@
 //	}
 //
 //	// Create specification telling how to decode the interface
-//	spec, err := utils.NewStruct("Geo", map[string]interface{}{
+//	spec, err := utils.NewStruct("Geo", map[string]any{
 //	    "Shape": "Circle",  // Shape field should be decoded as Circle type
 //	})
 //
 //	// Reference map of available types
-//	ref := map[string]interface{}{
+//	ref := map[string]any{
 //	    "Circle": &Circle{},
 //	    "Geo":    &Geo{},
 //	}

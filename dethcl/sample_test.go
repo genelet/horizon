@@ -13,8 +13,8 @@ type square struct {
 	SY int `json:"sy" hcl:"sy"`
 }
 
-func (self *square) Area() float32 {
-	return float32(self.SX * self.SY)
+func (s *square) Area() float32 {
+	return float32(s.SX * s.SY)
 }
 
 type moresquare struct {
@@ -24,16 +24,16 @@ type moresquare struct {
 	SY        int    `json:"sy" hcl:"sy"`
 }
 
-func (self *moresquare) Area() float32 {
-	return float32(self.SX * self.SY)
+func (m *moresquare) Area() float32 {
+	return float32(m.SX * m.SY)
 }
 
 type circle struct {
 	Radius float32 `json:"radius" hcl:"radius"`
 }
 
-func (self *circle) Area() float32 {
-	return 3.14159 * self.Radius
+func (c *circle) Area() float32 {
+	return 3.14159 * c.Radius
 }
 
 type circlemore struct {
@@ -43,8 +43,8 @@ type circlemore struct {
 	Arr3   []bool   `json:"arr3" hcl:"arr3,attr"`
 }
 
-func (self *circlemore) Area() float32 {
-	return 3.14159 * self.Radius
+func (cm *circlemore) Area() float32 {
+	return 3.14159 * cm.Radius
 }
 
 type geo struct {
@@ -77,9 +77,9 @@ type Painting struct {
 	Drawings []inter `json:"drawings" hcl:"drawings,block"`
 }
 
-func (self *Painting) UnmarshalHCL(dat []byte, labels ...string) error {
+func (p *Painting) UnmarshalHCL(dat []byte, labels ...string) error {
 	spec, err := utils.NewStruct(
-		"Painting", map[string]interface{}{
+		"Painting", map[string]any{
 			"Drawings": []string{"square", "square"},
 		},
 	)
@@ -89,9 +89,9 @@ func (self *Painting) UnmarshalHCL(dat []byte, labels ...string) error {
 	g := &geo{}
 	s := &square{}
 	c := &circle{}
-	ref := map[string]interface{}{"geo": g, "circle": c, "square": s}
+	ref := map[string]any{"geo": g, "circle": c, "square": s}
 
-	return UnmarshalSpec(dat, self, spec, ref)
+	return UnmarshalSpec(dat, p, spec, ref)
 }
 
 type gallery struct {
@@ -141,8 +141,8 @@ type toy struct {
 	Price   float32 `json:"price" hcl:"price"`
 }
 
-func (self *toy) ImportPrice(rate float32) float32 {
-	return rate * 0.7 * self.Price
+func (t *toy) ImportPrice(rate float32) float32 {
+	return rate * 0.7 * t.Price
 }
 
 type child struct {

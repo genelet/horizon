@@ -9,7 +9,7 @@ func TestJsonHcl(t *testing.T) {
 	data1 := `{
 "name": "peter", "radius": 1.0, "num": 2, "parties":["one", "two", ["three", "four"], {"five":"51", "six":61}], "roads":{"x":"a","y":"b", "z":{"za":"aa","zb":3.14}, "xy":["ab", true]}
 }`
-	d := map[string]interface{}{}
+	d := map[string]any{}
 	err := json.Unmarshal([]byte(data1), &d)
 	if err != nil {
 		t.Fatal(err)
@@ -20,7 +20,7 @@ func TestJsonHcl(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	m := make(map[string]interface{})
+	m := make(map[string]any)
 	err = Unmarshal(bs, &m)
 	if err != nil {
 		t.Fatal(err)
@@ -33,7 +33,7 @@ func TestJsonHcl(t *testing.T) {
 	}
 }
 
-func jsonEqual(d, m map[string]interface{}) bool {
+func jsonEqual(d, m map[string]any) bool {
 	xd, err := json.Marshal(d)
 	if err != nil {
 		panic(err)
@@ -61,7 +61,7 @@ service "http" "web_proxy" {
     command = ["/usr/local/bin/awesome-app", "mgmt"]
   }
 }`
-	d := map[string]interface{}{}
+	d := map[string]any{}
 	err := Unmarshal([]byte(data), &d)
 	if err != nil {
 		t.Fatal(err)
@@ -70,7 +70,7 @@ service "http" "web_proxy" {
 	if err != nil {
 		t.Fatal(err)
 	}
-	m := make(map[string]interface{})
+	m := make(map[string]any)
 	err = Unmarshal(bs, &m)
 	if err != nil {
 		t.Fatal(err)

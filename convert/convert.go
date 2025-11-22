@@ -9,10 +9,10 @@ import (
 )
 
 // UnmarshalFunc is a function that unmarshals data into a target object.
-type UnmarshalFunc func([]byte, interface{}) error
+type UnmarshalFunc func([]byte, any) error
 
 // MarshalFunc is a function that marshals an object into bytes.
-type MarshalFunc func(interface{}) ([]byte, error)
+type MarshalFunc func(any) ([]byte, error)
 
 // convertFormat is a generic converter that unmarshals from one format and marshals to another.
 // This eliminates code duplication across all conversion functions.
@@ -21,7 +21,7 @@ func convertFormat(raw []byte, unmarshal UnmarshalFunc, marshal MarshalFunc) ([]
 		return nil, fmt.Errorf("input is empty")
 	}
 
-	obj := map[string]interface{}{}
+	obj := map[string]any{}
 	if err := unmarshal(raw, &obj); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal input: %w", err)
 	}
@@ -34,7 +34,7 @@ func convertFormat(raw []byte, unmarshal UnmarshalFunc, marshal MarshalFunc) ([]
 
 // hclUnmarshal wraps dethcl.Unmarshal to match the UnmarshalFunc signature.
 // dethcl.Unmarshal has variadic labels parameter which we don't need for format conversion.
-func hclUnmarshal(data []byte, v interface{}) error {
+func hclUnmarshal(data []byte, v any) error {
 	return dethcl.Unmarshal(data, v)
 }
 

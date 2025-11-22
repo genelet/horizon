@@ -34,27 +34,27 @@ func NewTree(name string) *Tree {
 // AddNode adds a new node to the tree. It returns the newly created node.
 // If a node with the same name already exists, returns the existing node.
 // Thread-safe: Uses write lock to protect against concurrent modifications.
-func (self *Tree) AddNode(name string) *Tree {
-	self.mu.Lock()
-	defer self.mu.Unlock()
+func (t *Tree) AddNode(name string) *Tree {
+	t.mu.Lock()
+	defer t.mu.Unlock()
 
 	// Check if node already exists (must be inside lock to avoid TOCTOU)
-	first := findNodeByName(self.Downs, name)
+	first := findNodeByName(t.Downs, name)
 	if first != nil {
 		return first
 	}
 
 	child := NewTree(name)
-	self.Downs = append(self.Downs, child)
-	child.Up = self
+	t.Downs = append(t.Downs, child)
+	child.Up = t
 	return child
 }
 
 // AddNodes adds a new node to the tree, and then recursively adds the given names
 // as children to the new node, creating a path.
 // Returns the leaf node at the end of the path.
-func (self *Tree) AddNodes(tag string, names ...string) *Tree {
-	node := self.AddNode(tag)
+func (t *Tree) AddNodes(tag string, names ...string) *Tree {
+	node := t.AddNode(tag)
 	for _, name := range names {
 		node = node.AddNode(name)
 	}
@@ -76,14 +76,14 @@ func findNodeByName(downs []*Tree, name string) *Tree {
 // If tag is empty, returns self. If the node does not exist, returns nil.
 // Example: GetNode("service", "http", "web") returns the node at path service/http/web
 // Thread-safe: Uses read locks to safely traverse the tree.
-func (self *Tree) GetNode(tag string, names ...string) *Tree {
+func (t *Tree) GetNode(tag string, names ...string) *Tree {
 	if tag == "" {
-		return self
+		return t
 	}
 
-	self.mu.RLock()
-	down := findNodeByName(self.Downs, tag)
-	self.mu.RUnlock()
+	t.mu.RLock()
+	down := findNodeByName(t.Downs, tag)
+	t.mu.RUnlock()
 
 	if down == nil {
 		return nil
@@ -105,16 +105,16 @@ func (self *Tree) GetNode(tag string, names ...string) *Tree {
 
 // DeleteNode deletes the node with the given name.
 // Thread-safe: Uses write lock to protect against concurrent modifications.
-func (self *Tree) DeleteNode(name string) {
-	self.mu.Lock()
-	defer self.mu.Unlock()
+func (t *Tree) DeleteNode(name string) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
 
-	for i, item := range self.Downs {
+	for i, item := range t.Downs {
 		if item.Name == name {
-			if i+1 == len(self.Downs) {
-				self.Downs = self.Downs[:i]
+			if i+1 == len(t.Downs) {
+				t.Downs = t.Downs[:i]
 			} else {
-				self.Downs = append(self.Downs[:i], self.Downs[i+1:]...)
+				t.Downs = append(t.Downs[:i], t.Downs[i+1:]...)
 			}
 			return
 		}
@@ -122,32 +122,32 @@ func (self *Tree) DeleteNode(name string) {
 }
 
 // AddItem adds or updates a key-value pair in the tree's data storage.
-// The value can be any type and is stored as interface{}.
+// The value can be any type and is stored as any.
 // Thread-safe: Uses sync.Map which provides lock-free concurrent access.
-func (self *Tree) AddItem(k string, v interface{}) {
-	self.Data.Store(k, v)
+func (t *Tree) AddItem(k string, v any) {
+	t.Data.Store(k, v)
 }
 
 // DeleteItem removes a key-value pair from the tree's data storage.
 // Thread-safe: Uses sync.Map which provides lock-free concurrent access.
-func (self *Tree) DeleteItem(k string) {
-	self.Data.Delete(k)
+func (t *Tree) DeleteItem(k string) {
+	t.Data.Delete(k)
 }
 
 // FindNode searches for a node by following a path of names through the tree.
 // Returns nil if any part of the path is not found.
 // Example: FindNode([]string{"service", "http"}) finds the http node under service.
 // Thread-safe: Uses read locks to safely traverse the tree.
-func (self *Tree) FindNode(names []string) *Tree {
-	if names == nil || len(names) == 0 {
+func (t *Tree) FindNode(names []string) *Tree {
+	if len(names) == 0 {
 		return nil
 	}
 
 	// Lock and copy children to avoid holding lock during recursion
-	self.mu.RLock()
-	downs := make([]*Tree, len(self.Downs))
-	copy(downs, self.Downs)
-	self.mu.RUnlock()
+	t.mu.RLock()
+	downs := make([]*Tree, len(t.Downs))
+	copy(downs, t.Downs)
+	t.mu.RUnlock()
 
 	var down *Tree
 	for _, item := range downs {
@@ -170,15 +170,15 @@ func (self *Tree) FindNode(names []string) *Tree {
 // Variables returns all variables in the tree as a generic map.
 // For HCL expression evaluation, use CtyVariables instead.
 // Thread-safe: Uses read locks and copies children before recursive calls.
-func (self *Tree) Variables() map[string]interface{} {
-	hash := make(map[string]interface{})
+func (t *Tree) Variables() map[string]any {
+	hash := make(map[string]any)
 
 	// Lock and copy children to avoid holding lock during recursion
-	self.mu.RLock()
-	downs := make([]*Tree, len(self.Downs))
-	copy(downs, self.Downs)
-	name := self.Name
-	self.mu.RUnlock()
+	t.mu.RLock()
+	downs := make([]*Tree, len(t.Downs))
+	copy(downs, t.Downs)
+	name := t.Name
+	t.mu.RUnlock()
 
 	for _, down := range downs {
 		if variables := down.Variables(); variables != nil {
@@ -187,7 +187,7 @@ func (self *Tree) Variables() map[string]interface{} {
 	}
 
 	// Data.Range is already thread-safe (sync.Map)
-	self.Data.Range(func(k, v any) bool {
+	t.Data.Range(func(k, v any) bool {
 		if k != VAR {
 			hash[k.(string)] = v
 		}

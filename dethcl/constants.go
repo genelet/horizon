@@ -2,51 +2,51 @@ package dethcl
 
 // HCL struct tag constants
 const (
-	// TagPrefixHCL is the prefix for HCL struct tags
-	TagPrefixHCL = "hcl:\""
+	// tagPrefixHCL is the prefix for HCL struct tags
+	tagPrefixHCL = "hcl:\""
 
-	// TagPrefixHCLLength is the length of "hcl:\""
-	TagPrefixHCLLength = 5
+	// tagPrefixHCLLength is the length of "hcl:\""
+	tagPrefixHCLLength = 5
 
-	// TagModifierLabel indicates a field is an HCL label
-	TagModifierLabel = "label"
+	// tagModifierLabel indicates a field is an HCL label
+	tagModifierLabel = "label"
 
-	// TagModifierBlock indicates a field is an HCL block
-	TagModifierBlock = "block"
+	// tagModifierBlock indicates a field is an HCL block
+	tagModifierBlock = "block"
 
-	// TagModifierOptional indicates a field is optional
-	TagModifierOptional = "optional"
+	// tagModifierOptional indicates a field is optional
+	tagModifierOptional = "optional"
 
-	// TagIgnore indicates a field should be ignored
-	TagIgnore = "-"
+	// tagIgnore indicates a field should be ignored
+	tagIgnore = "-"
 
-	// TagIgnoreSuffix indicates a field with comma-dash suffix should be ignored
-	TagIgnoreSuffix = ",-"
+	// tagIgnoreSuffix indicates a field with comma-dash suffix should be ignored
+	tagIgnoreSuffix = ",-"
 
-	// MarkerNoBrackets is a special marker used during encoding to indicate
+	// markerNoBrackets is a special marker used during encoding to indicate
 	// that map brackets should not be used for array item encoding.
 	// This is used internally when encoding array elements within a map structure.
-	MarkerNoBrackets = "NMRBRCKTNDTRMND"
+	markerNoBrackets = "NMRBRCKTNDTRMND"
 )
 
 // File extension constants
 const (
-	// HCLFileExtension is the standard HCL file extension
-	HCLFileExtension = ".hcl"
+	// hclFileExtension is the standard HCL file extension
+	hclFileExtension = ".hcl"
 )
 
 // Parsing and encoding constants
 const (
-	// TempAttributeName is the temporary attribute name used when parsing expressions
+	// tempAttributeName is the temporary attribute name used when parsing expressions
 	// that need to be wrapped in an HCL attribute context
-	TempAttributeName = "x"
+	tempAttributeName = "x"
 
-	// HCLIndentSpaces is the number of spaces used for each indentation level in HCL output
-	HCLIndentSpaces = 2
+	// hclIndentSpaces is the number of spaces used for each indentation level in HCL output
+	hclIndentSpaces = 2
 
-	// EmptyArrayHCL is the HCL representation of an empty array
-	EmptyArrayHCL = "[]"
+	// emptyArrayHCL is the HCL representation of an empty array
+	emptyArrayHCL = "[]"
 
-	// EmptyObjectHCL is the HCL representation of an empty object
-	EmptyObjectHCL = "{}"
+	// emptyObjectHCL is the HCL representation of an empty object
+	emptyObjectHCL = "{}"
 )

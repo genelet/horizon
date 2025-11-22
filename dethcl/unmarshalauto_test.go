@@ -52,7 +52,7 @@ func TestUnmarshal_ValidHCLFile_Map(t *testing.T) {
        // HCL data here
      `)
 
-	result := map[string]interface{}{}
+	result := map[string]any{}
 	err := Unmarshal(hclData, &result)
 	if err != nil {
 		t.Errorf("Expected no error, but got: %v", err)

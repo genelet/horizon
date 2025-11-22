@@ -55,7 +55,7 @@ type Marshaler interface {
 //	// }
 //
 // Returns the HCL encoding or an error if marshaling fails.
-func Marshal(current interface{}) ([]byte, error) {
+func Marshal(current any) ([]byte, error) {
 	if current == nil {
 		return nil, nil
 	}
@@ -86,7 +86,7 @@ func Marshal(current interface{}) ([]byte, error) {
 //	// }
 //
 // Returns the indented HCL encoding or an error if marshaling fails.
-func MarshalLevel(current interface{}, level int) ([]byte, error) {
+func MarshalLevel(current any, level int) ([]byte, error) {
 	return marshalLevel(current, false, level)
 }
 
@@ -100,7 +100,7 @@ func MarshalLevel(current interface{}, level int) ([]byte, error) {
 //   - keyname: optional label values for blocks
 //
 // Returns nil for zero values, otherwise delegates to appropriate encoding function.
-func marshalLevel(current interface{}, equal bool, level int, keyname ...string) ([]byte, error) {
+func marshalLevel(current any, equal bool, level int, keyname ...string) ([]byte, error) {
 	reflectValue := reflect.ValueOf(current)
 	if reflectValue.IsValid() && reflectValue.IsZero() {
 		return nil, nil
@@ -134,7 +134,7 @@ func marshalLevel(current interface{}, equal bool, level int, keyname ...string)
 //   - keyname: optional label values from parent context
 //
 // Returns formatted HCL bytes with proper indentation and block structure.
-func marshal(current interface{}, level int, keyname ...string) ([]byte, error) {
+func marshal(current any, level int, keyname ...string) ([]byte, error) {
 	if current == nil {
 		return nil, nil
 	}
@@ -217,7 +217,7 @@ func marshal(current interface{}, level int, keyname ...string) ([]byte, error) 
 		} else {
 			fieldTag := field.Tag
 			tagParts := parseHCLTag(fieldTag)
-			if tagParts[1] == TagModifierLabel {
+			if tagParts[1] == tagModifierLabel {
 				label := fieldValue.Interface().(string)
 				if keyname == nil || keyname[0] != label {
 					labels = append(labels, label)
@@ -269,8 +269,8 @@ func marshal(current interface{}, level int, keyname ...string) ([]byte, error) 
 // complex fields (encoded recursively with special handling).
 type marshalField struct {
 	field reflect.StructField // The struct field metadata
-	value reflect.Value        // The field's actual value
-	out   bool                 // true if complex field requiring special marshaling
+	value reflect.Value       // The field's actual value
+	out   bool                // true if complex field requiring special marshaling
 }
 
 // getFields categorizes struct fields into simple and complex fields for marshaling.
@@ -300,7 +300,7 @@ func getFields(structType reflect.Type, structValue reflect.Value) ([]*marshalFi
 		fieldValue := structValue.Field(i)
 		tagParts := parseHCLTag(field.Tag)
 		tagName := tagParts[0]
-		if tagName == TagIgnore || (len(tagName) >= 2 && tagName[len(tagName)-2:] == TagIgnoreSuffix) {
+		if tagName == tagIgnore || (len(tagName) >= 2 && tagName[len(tagName)-2:] == tagIgnoreSuffix) {
 			continue
 		}
 
@@ -362,9 +362,9 @@ func getFields(structType reflect.Type, structValue reflect.Value) ([]*marshalFi
 		}
 		if tagName == "" {
 			if needsSpecialMarshaling {
-				field.Tag = reflect.StructTag(fmt.Sprintf(`hcl:"%s,%s"`, strings.ToLower(field.Name), TagModifierBlock))
+				field.Tag = reflect.StructTag(fmt.Sprintf(`hcl:"%s,%s"`, strings.ToLower(field.Name), tagModifierBlock))
 			} else {
-				field.Tag = reflect.StructTag(fmt.Sprintf(`hcl:"%s,%s"`, strings.ToLower(field.Name), TagModifierOptional))
+				field.Tag = reflect.StructTag(fmt.Sprintf(`hcl:"%s,%s"`, strings.ToLower(field.Name), tagModifierOptional))
 			}
 		}
 		categorizedFields = append(categorizedFields, &marshalField{field, fieldValue, needsSpecialMarshaling})
@@ -442,7 +442,7 @@ func getOutlier(field reflect.StructField, oriField reflect.Value, level int) ([
 		}
 		empty = append(empty, &marshalOut{extractHCLTagName(fieldTag), nil, bs, false})
 	case reflect.Struct:
-		var newCurrent interface{}
+		var newCurrent any
 		if oriField.CanAddr() {
 			newCurrent = oriField.Addr().Interface()
 		} else {
@@ -457,100 +457,127 @@ func getOutlier(field reflect.StructField, oriField reflect.Value, level int) ([
 		}
 		empty = append(empty, &marshalOut{extractHCLTagName(fieldTag), nil, bs, false})
 	case reflect.Slice:
-		if oriField.IsNil() {
-			return nil, nil
+		results, err := handleSlice(field, oriField, newlevel)
+		if err != nil {
+			return nil, err
 		}
-
-		n := oriField.Len()
-		if n < 1 {
-			return []*marshalOut{{extractHCLTagName(fieldTag), nil, []byte(`[]`), true}}, nil
-		}
-
-		first := oriField.Index(0)
-		isLoop := needsLoopMarshaling(first)
-
-		if isLoop {
-			for i := 0; i < n; i++ {
-				item := oriField.Index(i)
-				bs, err := MarshalLevel(item.Interface(), newlevel)
-				if err != nil {
-					return nil, err
-				}
-				if isBlank(bs) {
-					continue
-				}
-				empty = append(empty, &marshalOut{extractHCLTagName(fieldTag), nil, bs, false})
-			}
-		} else {
-			bs, err := MarshalLevel(oriField.Interface(), newlevel)
-			if err != nil {
-				return nil, err
-			}
-			if isBlank(bs) {
-				return nil, nil
-			}
-			empty = append(empty, &marshalOut{extractHCLTagName(fieldTag), nil, bs, true})
-		}
+		empty = append(empty, results...)
 	case reflect.Map:
-		if oriField.IsNil() {
-			return nil, nil
+		results, err := handleMap(field, oriField, level, newlevel)
+		if err != nil {
+			return nil, err
 		}
-
-		n := oriField.Len()
-		if n < 1 {
-			leading := indent(level + 1)
-			return []*marshalOut{{extractHCLTagName(fieldTag), nil, []byte("{\n" + leading + "}"), false}}, nil
-		}
-
-		first := oriField.MapIndex(oriField.MapKeys()[0])
-		isLoop := needsLoopMarshaling(first)
-
-		if isLoop {
-			iter := oriField.MapRange()
-			for iter.Next() {
-				k := iter.Key()
-				var arr []string
-				switch k.Kind() {
-				case reflect.Array, reflect.Slice:
-					for i := 0; i < k.Len(); i++ {
-						item := k.Index(i)
-						if !item.IsZero() {
-							arr = append(arr, item.String())
-						}
-					}
-				default:
-					arr = append(arr, k.String())
-				}
-
-				v := iter.Value()
-				var bs []byte
-				var err error
-				bs, err = marshal(v.Interface(), newlevel, arr...)
-				if err != nil {
-					return empty, err
-				}
-				if isBlank(bs) {
-					continue
-				}
-				empty = append(empty, &marshalOut{extractHCLTagName(fieldTag), arr, bs, false})
-			}
-		} else {
-			bs, err := MarshalLevel(oriField.Interface(), newlevel)
-			if err != nil {
-				return nil, err
-			}
-			if isBlank(bs) {
-				return nil, nil
-			}
-			equal := true
-			if typ.Elem().Kind() == reflect.Interface {
-				equal = false
-			}
-			empty = append(empty, &marshalOut{extractHCLTagName(fieldTag), nil, bs, equal})
-		}
+		empty = append(empty, results...)
 	default:
 	}
 	return empty, nil
+}
+
+func handleSlice(field reflect.StructField, oriField reflect.Value, level int) ([]*marshalOut, error) {
+	if oriField.IsNil() {
+		return nil, nil
+	}
+
+	n := oriField.Len()
+	fieldTag := field.Tag
+	if n < 1 {
+		return []*marshalOut{{extractHCLTagName(fieldTag), nil, []byte(`[]`), true}}, nil
+	}
+
+	first := oriField.Index(0)
+	isLoop := needsLoopMarshaling(first)
+
+	var results []*marshalOut
+	if isLoop {
+		for i := 0; i < n; i++ {
+			item := oriField.Index(i)
+			bs, err := MarshalLevel(item.Interface(), level)
+			if err != nil {
+				return nil, err
+			}
+			if isBlank(bs) {
+				continue
+			}
+			results = append(results, &marshalOut{extractHCLTagName(fieldTag), nil, bs, false})
+		}
+	} else {
+		bs, err := MarshalLevel(oriField.Interface(), level)
+		if err != nil {
+			return nil, err
+		}
+		if isBlank(bs) {
+			return nil, nil
+		}
+		results = append(results, &marshalOut{extractHCLTagName(fieldTag), nil, bs, true})
+	}
+	return results, nil
+}
+
+func handleMap(field reflect.StructField, oriField reflect.Value, currentLevel, level int) ([]*marshalOut, error) {
+	if oriField.IsNil() {
+		return nil, nil
+	}
+
+	n := oriField.Len()
+	fieldTag := field.Tag
+	if n < 1 {
+		leading := indent(currentLevel + 1)
+		return []*marshalOut{{extractHCLTagName(fieldTag), nil, []byte("{\n" + leading + "}"), false}}, nil
+	}
+
+	first := oriField.MapIndex(oriField.MapKeys()[0])
+	isLoop := needsLoopMarshaling(first)
+	typ := field.Type
+	// treat ptr the same as the underlying type e.g. *Example, Example
+	if typ.Kind() == reflect.Ptr && (typ.Elem().Kind() == reflect.Map || typ.Elem().Kind() == reflect.Slice) {
+		typ = typ.Elem()
+	}
+
+	var results []*marshalOut
+	if isLoop {
+		iter := oriField.MapRange()
+		for iter.Next() {
+			k := iter.Key()
+			var arr []string
+			switch k.Kind() {
+			case reflect.Array, reflect.Slice:
+				for i := 0; i < k.Len(); i++ {
+					item := k.Index(i)
+					if !item.IsZero() {
+						arr = append(arr, item.String())
+					}
+				}
+			default:
+				arr = append(arr, k.String())
+			}
+
+			v := iter.Value()
+			var bs []byte
+			var err error
+			bs, err = marshal(v.Interface(), level, arr...)
+			if err != nil {
+				return nil, err
+			}
+			if isBlank(bs) {
+				continue
+			}
+			results = append(results, &marshalOut{extractHCLTagName(fieldTag), arr, bs, false})
+		}
+	} else {
+		bs, err := MarshalLevel(oriField.Interface(), level)
+		if err != nil {
+			return nil, err
+		}
+		if isBlank(bs) {
+			return nil, nil
+		}
+		equal := true
+		if typ.Elem().Kind() == reflect.Interface {
+			equal = false
+		}
+		results = append(results, &marshalOut{extractHCLTagName(fieldTag), nil, bs, equal})
+	}
+	return results, nil
 }
 
 // isBlank checks if a byte slice contains only whitespace characters.

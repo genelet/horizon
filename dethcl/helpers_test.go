@@ -221,7 +221,7 @@ func TestGetStructFields(t *testing.T) {
 func TestIsComplexField(t *testing.T) {
 	tests := []struct {
 		name     string
-		value    interface{}
+		value    any
 		expected bool
 	}{
 		{
@@ -246,7 +246,7 @@ func TestIsComplexField(t *testing.T) {
 		},
 		{
 			name:     "slice of interfaces is complex",
-			value:    []interface{}{"test", 42},
+			value:    []any{"test", 42},
 			expected: true,
 		},
 		{
@@ -293,16 +293,16 @@ func TestIsComplexField(t *testing.T) {
 }
 
 type TestCategorizeStruct struct {
-	Label       string                     `hcl:"type,label"`
-	Name        string                     `hcl:"name"`
-	Count       int                        `hcl:"count"`
-	Config      struct{ Value string }     `hcl:"config,block"`
-	Tags        []string                   `hcl:"tags"`
-	Metadata    map[string]string          `hcl:"metadata"`
-	Nested      []struct{ Name string }    `hcl:"nested"`
-	ZeroValue   string                     `hcl:"zero"`
-	EmptySlice  []string                   `hcl:"empty_slice"`
-	EmptyMap    map[string]string          `hcl:"empty_map"`
+	Label      string                  `hcl:"type,label"`
+	Name       string                  `hcl:"name"`
+	Count      int                     `hcl:"count"`
+	Config     struct{ Value string }  `hcl:"config,block"`
+	Tags       []string                `hcl:"tags"`
+	Metadata   map[string]string       `hcl:"metadata"`
+	Nested     []struct{ Name string } `hcl:"nested"`
+	ZeroValue  string                  `hcl:"zero"`
+	EmptySlice []string                `hcl:"empty_slice"`
+	EmptyMap   map[string]string       `hcl:"empty_map"`
 }
 
 func TestCategorizeFields(t *testing.T) {

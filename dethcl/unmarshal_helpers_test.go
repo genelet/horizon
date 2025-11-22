@@ -41,8 +41,8 @@ func TestParseHCLFile(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "empty HCL",
-			input: []byte(``),
+			name:    "empty HCL",
+			input:   []byte(``),
 			wantErr: false,
 		},
 	}
@@ -208,7 +208,7 @@ func TestUnmarshalToMap(t *testing.T) {
 		tags = ["a", "b", "c"]
 	`)
 
-	result := make(map[string]interface{})
+	result := make(map[string]any)
 	node, _ := utils.NewTreeCtyFunction(nil)
 
 	err := unmarshalToMap(node, hclData, &result)
@@ -227,8 +227,8 @@ func TestUnmarshalToMap(t *testing.T) {
 	}
 
 	// Check tags
-	if tags, ok := result["tags"].([]interface{}); !ok {
-		t.Errorf("tags should be []interface{}, got %T", result["tags"])
+	if tags, ok := result["tags"].([]any); !ok {
+		t.Errorf("tags should be []any, got %T", result["tags"])
 	} else if len(tags) != 3 {
 		t.Errorf("len(tags) = %d, want 3", len(tags))
 	}
@@ -247,7 +247,7 @@ func TestUnmarshalToSlice(t *testing.T) {
 		}
 	]`)
 
-	result := make([]interface{}, 0)
+	result := make([]any, 0)
 	node, _ := utils.NewTreeCtyFunction(nil)
 
 	err := unmarshalToSlice(node, hclData, &result)

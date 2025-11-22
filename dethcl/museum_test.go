@@ -91,28 +91,28 @@ func TestMapSliceNew(t *testing.T) {
 	}
 
 	m := &museum{}
-	ref := map[string]interface{}{
+	ref := map[string]any{
 		"square":  new(square),
 		"circle":  new(circle),
 		"picture": new(picture),
 		"museum":  new(museum),
 	}
 	spec, err := utils.NewStruct(
-		"museum", map[string]interface{}{
-			"Arts": map[string][2]interface{}{
-				"first": {"picture", map[string]interface{}{
+		"museum", map[string]any{
+			"Arts": map[string][2]any{
+				"first": {"picture", map[string]any{
 					"Drawings": []string{"square", "square"}},
 				},
-				"second": {"picture", map[string]interface{}{
+				"second": {"picture", map[string]any{
 					"Drawings": []string{"square", "square", "square", "square"}},
 				},
-				"third": {"picture", map[string]interface{}{
+				"third": {"picture", map[string]any{
 					"Drawings": []string{"circle", "circle", "circle"}},
 				},
-				"forth": {"picture", map[string]interface{}{
+				"forth": {"picture", map[string]any{
 					"Drawings": []string{"circle", "circle", "circle", "circle", "circle"}},
 				},
-				"fifth": {"picture", map[string]interface{}{
+				"fifth": {"picture", map[string]any{
 					"Drawings": []string{"square", "circle", "square"}},
 				},
 			},
@@ -301,28 +301,28 @@ func TestMap2Read(t *testing.T) {
 	}
 
 	m2 := &museum2{}
-	ref := map[string]interface{}{
+	ref := map[string]any{
 		"square":  new(square),
 		"circle":  new(circle),
 		"picture": new(picture),
 		"museum2": new(museum2),
 	}
 	spec, err := utils.NewStruct(
-		"museum2", map[string]interface{}{
-			"Arts": map[[2]string][2]interface{}{
-				{"first", "x1"}: {"picture", map[string]interface{}{
+		"museum2", map[string]any{
+			"Arts": map[[2]string][2]any{
+				{"first", "x1"}: {"picture", map[string]any{
 					"Drawings": []string{"square", "square"}},
 				},
-				{"second", "x2"}: {"picture", map[string]interface{}{
+				{"second", "x2"}: {"picture", map[string]any{
 					"Drawings": []string{"square", "square", "square", "square"}},
 				},
-				{"third", "x3"}: {"picture", map[string]interface{}{
+				{"third", "x3"}: {"picture", map[string]any{
 					"Drawings": []string{"circle", "circle", "circle"}},
 				},
-				{"forth", "x4"}: {"picture", map[string]interface{}{
+				{"forth", "x4"}: {"picture", map[string]any{
 					"Drawings": []string{"circle", "circle", "circle", "circle", "circle"}},
 				},
-				{"fifth", "x5"}: {"picture", map[string]interface{}{
+				{"fifth", "x5"}: {"picture", map[string]any{
 					"Drawings": []string{"square", "circle", "square"}},
 				},
 			},
@@ -379,28 +379,28 @@ func TestMap20Read(t *testing.T) {
 	}
 
 	m2 := &museum2{}
-	ref := map[string]interface{}{
+	ref := map[string]any{
 		"square":  new(square),
 		"circle":  new(circle),
 		"picture": new(picture),
 		"museum2": new(museum2),
 	}
 	spec, err := utils.NewStruct(
-		"museum2", map[string]interface{}{
-			"Arts": map[[2]string][2]interface{}{
-				{"first"}: {"picture", map[string]interface{}{
+		"museum2", map[string]any{
+			"Arts": map[[2]string][2]any{
+				{"first"}: {"picture", map[string]any{
 					"Drawings": []string{"square", "square"}},
 				},
-				{"second"}: {"picture", map[string]interface{}{
+				{"second"}: {"picture", map[string]any{
 					"Drawings": []string{"square", "square", "square", "square"}},
 				},
-				{"third"}: {"picture", map[string]interface{}{
+				{"third"}: {"picture", map[string]any{
 					"Drawings": []string{"circle", "circle", "circle"}},
 				},
-				{"forth"}: {"picture", map[string]interface{}{
+				{"forth"}: {"picture", map[string]any{
 					"Drawings": []string{"circle", "circle", "circle", "circle", "circle"}},
 				},
-				{"fifth"}: {"picture", map[string]interface{}{
+				{"fifth"}: {"picture", map[string]any{
 					"Drawings": []string{"square", "circle", "square"}},
 				},
 			},

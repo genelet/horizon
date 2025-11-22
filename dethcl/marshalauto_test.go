@@ -125,7 +125,7 @@ func TestMarshal_EmbeddedStructsAndPointers(t *testing.T) {
 	type InnerStruct struct {
 		Field1 string
 		Field2 int
-		Field3 interface{}
+		Field3 any
 		Field4 bool
 		Field5 *string
 	}
