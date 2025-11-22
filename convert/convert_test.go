@@ -150,3 +150,68 @@ func hcl2self(t *testing.T, fn string) {
 		t.Errorf("hash1: %#v\n", hash1)
 	}
 }
+
+// TestErrorCases tests error handling for invalid inputs
+func TestErrorCases(t *testing.T) {
+	testCases := []struct {
+		name    string
+		input   []byte
+		convFn  func([]byte) ([]byte, error)
+		wantErr bool
+	}{
+		{
+			name:    "InvalidJSON_ToYAML",
+			input:   []byte(`{invalid json`),
+			convFn:  JSONToYAML,
+			wantErr: true,
+		},
+		{
+			name:    "InvalidJSON_ToHCL",
+			input:   []byte(`{"unclosed": `),
+			convFn:  JSONToHCL,
+			wantErr: true,
+		},
+		{
+			name:    "InvalidYAML_ToJSON",
+			input:   []byte("invalid:\n  - yaml\n bad indent"),
+			convFn:  YAMLToJSON,
+			wantErr: true,
+		},
+		{
+			name:    "InvalidYAML_ToHCL",
+			input:   []byte(":: invalid yaml ::"),
+			convFn:  YAMLToHCL,
+			wantErr: true,
+		},
+		{
+			name:    "InvalidHCL_ToJSON",
+			input:   []byte(`block "unclosed" {`),
+			convFn:  HCLToJSON,
+			wantErr: true,
+		},
+		{
+			name:    "InvalidHCL_ToYAML",
+			input:   []byte(`invalid = = syntax`),
+			convFn:  HCLToYAML,
+			wantErr: true,
+		},
+		{
+			name:    "EmptyInput_JSON",
+			input:   []byte(``),
+			convFn:  JSONToYAML,
+			wantErr: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := tc.convFn(tc.input)
+			if tc.wantErr && err == nil {
+				t.Errorf("expected error but got none")
+			}
+			if !tc.wantErr && err != nil {
+				t.Errorf("unexpected error: %v", err)
+			}
+		})
+	}
+}

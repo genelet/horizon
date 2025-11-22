@@ -23,6 +23,19 @@ func usage() {
 	os.Exit(1)
 }
 
+// conversionFunc represents a format conversion function
+type conversionFunc func([]byte) ([]byte, error)
+
+// conversions maps "from->to" format pairs to their conversion functions
+var conversions = map[string]conversionFunc{
+	"json->yaml": convert.JSONToYAML,
+	"json->hcl":  convert.JSONToHCL,
+	"yaml->json": convert.YAMLToJSON,
+	"yaml->hcl":  convert.YAMLToHCL,
+	"hcl->json":  convert.HCLToJSON,
+	"hcl->yaml":  convert.HCLToYAML,
+}
+
 func main() {
 	if from == to {
 		fmt.Fprintf(os.Stderr, "error: from and to format are the same\n")
@@ -40,42 +53,16 @@ func main() {
 		os.Exit(1)
 	}
 
-	switch from {
-	case "json":
-		switch to {
-		case "yaml":
-			raw, err = convert.JSONToYAML(raw)
-		case "hcl":
-			raw, err = convert.JSONToHCL(raw)
-		default:
-			fmt.Fprintf(os.Stderr, "error: unsupported to format %s\n", to)
-			os.Exit(1)
-		}
-	case "yaml":
-		switch to {
-		case "json":
-			raw, err = convert.YAMLToJSON(raw)
-		case "hcl":
-			raw, err = convert.YAMLToHCL(raw)
-		default:
-			fmt.Fprintf(os.Stderr, "error: unsupported to format %s\n", to)
-			os.Exit(1)
-		}
-	case "hcl":
-		switch to {
-		case "json":
-			raw, err = convert.HCLToJSON(raw)
-		case "yaml":
-			raw, err = convert.HCLToYAML(raw)
-		default:
-			fmt.Fprintf(os.Stderr, "error: unsupported to format %s\n", to)
-			os.Exit(1)
-		}
-	default:
-		fmt.Fprintf(os.Stderr, "error: unsupported from format %s\n", from)
+	// Look up conversion function
+	conversionKey := from + "->" + to
+	convertFunc, ok := conversions[conversionKey]
+	if !ok {
+		fmt.Fprintf(os.Stderr, "error: unsupported conversion from %s to %s\n", from, to)
 		os.Exit(1)
 	}
 
+	// Perform conversion
+	raw, err = convertFunc(raw)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error: %v\n", err)
 		os.Exit(1)

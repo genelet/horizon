@@ -2,6 +2,7 @@ package convert
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/genelet/horizon/dethcl"
 	"gopkg.in/yaml.v3"
@@ -18,9 +19,13 @@ type MarshalFunc func(interface{}) ([]byte, error)
 func convertFormat(raw []byte, unmarshal UnmarshalFunc, marshal MarshalFunc) ([]byte, error) {
 	obj := map[string]interface{}{}
 	if err := unmarshal(raw, &obj); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to unmarshal input: %w", err)
 	}
-	return marshal(obj)
+	result, err := marshal(obj)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal output: %w", err)
+	}
+	return result, nil
 }
 
 // hclUnmarshal wraps dethcl.Unmarshal to match the UnmarshalFunc signature.
