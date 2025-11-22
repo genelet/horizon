@@ -8,17 +8,9 @@ import (
 	"github.com/genelet/horizon/convert"
 )
 
-var from string
-var to string
-
-func init() {
-	flag.StringVar(&from, "from", "json", "from format")
-	flag.StringVar(&to, "to", "hcl", "to format")
-	flag.Parse()
-}
-
 func usage() {
 	fmt.Fprintf(os.Stderr, "usage: %s [options] <filename>\n", os.Args[0])
+	fmt.Fprintf(os.Stderr, "\nSupported formats: json, yaml, hcl\n\n")
 	flag.PrintDefaults()
 	os.Exit(1)
 }
@@ -37,6 +29,12 @@ var conversions = map[string]conversionFunc{
 }
 
 func main() {
+	var from string
+	var to string
+	flag.StringVar(&from, "from", "json", "from format")
+	flag.StringVar(&to, "to", "hcl", "to format")
+	flag.Parse()
+
 	if from == to {
 		fmt.Fprintf(os.Stderr, "error: from and to format are the same\n")
 		os.Exit(1)

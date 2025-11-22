@@ -14,12 +14,12 @@ func TestYaml2Json(t *testing.T) {
 	testCases := []string{"x", "y", "z"}
 	for _, tc := range testCases {
 		t.Run(tc, func(t *testing.T) {
-			yaml2(t, tc)
+			testYAMLConversions(t, tc)
 		})
 	}
 }
 
-func yaml2(t *testing.T, fn string) {
+func testYAMLConversions(t *testing.T, fn string) {
 	raw, err := os.ReadFile(fn + ".yaml")
 	if err != nil {
 		t.Fatalf("error: %v\n", err)
@@ -66,12 +66,12 @@ func TestHcl2Json(t *testing.T) {
 	testCases := []string{"x", "y", "z"}
 	for _, tc := range testCases {
 		t.Run(tc, func(t *testing.T) {
-			hcl2(t, tc)
+			testHCLConversions(t, tc)
 		})
 	}
 }
 
-func hcl2(t *testing.T, fn string) {
+func testHCLConversions(t *testing.T, fn string) {
 	raw, err := os.ReadFile(fn + ".hcl")
 	if err != nil {
 		t.Fatalf("error: %v\n", err)
@@ -119,12 +119,12 @@ func TestHcl2self(t *testing.T) {
 	testCases := []string{"x", "y", "z"}
 	for _, tc := range testCases {
 		t.Run(tc, func(t *testing.T) {
-			hcl2self(t, tc)
+			testHCLRoundTrip(t, tc)
 		})
 	}
 }
 
-func hcl2self(t *testing.T, fn string) {
+func testHCLRoundTrip(t *testing.T, fn string) {
 	raw, err := os.ReadFile(fn + ".hcl")
 	if err != nil {
 		t.Fatalf("error: %v\n", err)

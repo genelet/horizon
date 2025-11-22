@@ -17,6 +17,10 @@ type MarshalFunc func(interface{}) ([]byte, error)
 // convertFormat is a generic converter that unmarshals from one format and marshals to another.
 // This eliminates code duplication across all conversion functions.
 func convertFormat(raw []byte, unmarshal UnmarshalFunc, marshal MarshalFunc) ([]byte, error) {
+	if len(raw) == 0 {
+		return nil, fmt.Errorf("input is empty")
+	}
+
 	obj := map[string]interface{}{}
 	if err := unmarshal(raw, &obj); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal input: %w", err)
