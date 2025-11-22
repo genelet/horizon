@@ -1,3 +1,7 @@
 tmp/
 docs/
 .vscode
+
+# Compiled binaries
+cmd/*/fmtconvert
+cmd/fmtconvert/fmtconvert
