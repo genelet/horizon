@@ -103,7 +103,11 @@ func MarshalLevel(current any, level int) ([]byte, error) {
 func marshalLevel(current any, equal bool, level int, keyname ...string) ([]byte, error) {
 	reflectValue := reflect.ValueOf(current)
 	if reflectValue.IsValid() && reflectValue.IsZero() {
-		return nil, nil
+		// If we are in a slice (indicated by markerNoBrackets), we must encode zero values
+		// otherwise [0] becomes [].
+		if len(keyname) == 0 || keyname[0] != markerNoBrackets {
+			return nil, nil
+		}
 	}
 
 	switch reflectValue.Kind() {

@@ -697,7 +697,7 @@ func TestZeroFalseMore2(t *testing.T) {
         "default"
       ]
       renewable = true
-      mfa_requirement = null()
+      mfa_requirement = null
       token_type = "service"
       orphan = true
       num_uses = 0
@@ -713,7 +713,7 @@ func TestZeroFalseMore2(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(bs) != 644 {
+	if len(bs) != 642 {
 		t.Errorf("%d %s", len(bs), bs)
 	}
 }

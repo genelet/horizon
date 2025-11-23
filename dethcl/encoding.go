@@ -175,7 +175,7 @@ func encodeMap(rv reflect.Value, equal bool, level int, keyname ...string) ([]by
 		switch iter.Value().Kind() {
 		case reflect.Interface, reflect.Ptr, reflect.Map, reflect.Slice, reflect.Func:
 			if iter.Value().IsNil() {
-				arr = append(arr, fmt.Sprintf("%s = null()", key.String()))
+				arr = append(arr, fmt.Sprintf("%s = null", key.String()))
 				continue
 			}
 		default:
@@ -216,7 +216,7 @@ func encodeSlice(rv reflect.Value, level int) ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
-		item := `[]`
+		item := `null`
 		if bs != nil {
 			item = string(bs)
 		}

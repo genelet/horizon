@@ -213,10 +213,6 @@ func expressionToNative(ref map[string]any, node *utils.Tree, file *hcl.File, ke
 	case *hclsyntax.ObjectConsExpr: // map
 		subNode := node.AddNode(fmt.Sprintf("%v", key))
 		return decodeObject(ref, subNode, file, exprType)
-	case *hclsyntax.FunctionCallExpr:
-		if exprType.Name == "null" {
-			return nil, nil
-		}
 	default:
 	}
 
