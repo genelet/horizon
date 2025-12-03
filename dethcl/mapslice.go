@@ -36,6 +36,9 @@ func decodeSlice(ref map[string]any, node *utils.Tree, hclBytes []byte) ([]any, 
 
 func decodeMap(ref map[string]any, node *utils.Tree, hclBytes []byte) (map[string]any, error) {
 	trimmed := strings.TrimSpace(string(hclBytes))
+	if len(trimmed) == 0 {
+		return make(map[string]any), nil
+	}
 	if trimmed[0] == '{' && trimmed[len(trimmed)-1] == '}' {
 		return decodeObjectConsExpr(ref, node, hclBytes)
 	}
@@ -224,7 +227,6 @@ func expressionToNative(ref map[string]any, node *utils.Tree, file *hcl.File, ke
 	if attr != nil {
 		attr[0].Expr = utils.CtyToExpression(ctyValue, attr[0].Expr.Range())
 	}
-	//item = utils.CtyToExpression(ctyValue, item.Range())
 
 	node.AddItem(fmt.Sprintf("%v", key), ctyValue)
 

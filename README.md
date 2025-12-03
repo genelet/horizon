@@ -1,5 +1,8 @@
 # horizon
 
+
+[![GoDoc](https://godoc.org/github.com/genelet/horizon?status.svg)](https://godoc.org/github.com/genelet/horizon)
+
 `horizon` is a Go library that provides enhanced marshaling and unmarshaling capabilities between HCL (HashiCorp Configuration Language) and Go structures. It specifically addresses limitations in the standard HCL library regarding interface types and complex map structures.
 
 It also includes utilities for converting between HCL, JSON, and YAML formats.

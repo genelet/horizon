@@ -4,24 +4,24 @@ import (
 	"fmt"
 	"math/rand"
 	"reflect"
+	"sort"
 	"strings"
+
+	"github.com/genelet/horizon/utils"
 )
 
-// clone creates a shallow copy of a struct value by copying all settable fields.
-// The input must be a pointer to a struct.
-// Returns a new pointer to a struct of the same type with copied field values.
+// clone creates a new zero-value instance of the same type as old.
+// The old parameter must be a pointer to a struct.
+// This is used to create fresh instances from type registry templates
+// before unmarshaling HCL data into them.
+//
+// Note: This creates a zero-value instance rather than copying fields.
+// This is intentional because:
+// 1. Templates in the type registry should be zero-value prototypes
+// 2. The instance will be immediately populated by HCL unmarshaling
+// 3. This avoids shallow copy issues with pointer fields
 func clone(old any) any {
-	obj := reflect.New(reflect.TypeOf(old).Elem())
-	oldVal := reflect.ValueOf(old).Elem()
-	newVal := obj.Elem()
-	for i := 0; i < oldVal.NumField(); i++ {
-		newValField := newVal.Field(i)
-		if newValField.CanSet() {
-			newValField.Set(oldVal.Field(i))
-		}
-	}
-
-	return obj.Interface()
+	return reflect.New(reflect.TypeOf(old).Elem()).Interface()
 }
 
 // parseHCLTag extracts the HCL tag name and modifier from a struct field tag.
@@ -52,4 +52,31 @@ func extractHCLTagName(tag reflect.StructTag) []byte {
 // Format: <random-number>.hcl
 func generateTempHCLFileName() string {
 	return fmt.Sprintf("%d%s", rand.Int(), hclFileExtension)
+}
+
+// getFirstStructFromMap returns the first struct from a map using deterministic key order.
+// This ensures consistent behavior across runs since Go map iteration order is random.
+func getFirstStructFromMap(m map[string]*utils.Struct) *utils.Struct {
+	if len(m) == 0 {
+		return nil
+	}
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return m[keys[0]]
+}
+
+// getFirstMapStructFromMap returns the first MapStruct from a map using deterministic key order.
+func getFirstMapStructFromMap(m map[string]*utils.MapStruct) *utils.MapStruct {
+	if len(m) == 0 {
+		return nil
+	}
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return m[keys[0]]
 }

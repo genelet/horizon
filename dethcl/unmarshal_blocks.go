@@ -58,13 +58,14 @@ func processMap2StructField(node *utils.Tree, file *hcl.File, ref map[string]any
 	}
 
 	nextMap2Structs := mapSpec.GetMap2Fields()
-	var first *utils.MapStruct
-	var firstFirst *utils.Struct
-	for _, first = range nextMap2Structs {
-		for _, firstFirst = range first.GetMapFields() {
-			break
-		}
-		break
+	// Use deterministic key order for default selection
+	first := getFirstMapStructFromMap(nextMap2Structs)
+	if first == nil {
+		return fmt.Errorf("field %s: empty Map2Struct specification", name)
+	}
+	firstFirst := getFirstStructFromMap(first.GetMapFields())
+	if firstFirst == nil {
+		return fmt.Errorf("field %s: empty inner MapStruct specification", name)
 	}
 
 	n := len(blocks)
@@ -147,9 +148,10 @@ func processMapStructField(node *utils.Tree, file *hcl.File, ref map[string]any,
 	}
 
 	nextMapStructs := mapSpec.GetMapFields()
-	var first *utils.Struct
-	for _, first = range nextMapStructs {
-		break
+	// Use deterministic key order for default selection
+	first := getFirstStructFromMap(nextMapStructs)
+	if first == nil {
+		return fmt.Errorf("field %s: empty MapStruct specification", name)
 	}
 
 	n := len(blocks)

@@ -23,10 +23,14 @@ const (
 	// tagIgnoreSuffix indicates a field with comma-dash suffix should be ignored
 	tagIgnoreSuffix = ",-"
 
-	// markerNoBrackets is a special marker used during encoding to indicate
-	// that map brackets should not be used for array item encoding.
-	// This is used internally when encoding array elements within a map structure.
-	markerNoBrackets = "NMRBRCKTNDTRMND"
+	// markerNoBrackets is an internal sentinel value used during array encoding.
+	// When passed as keyname[0] to marshalLevel, it signals that:
+	// 1. Zero values should be encoded (not skipped)
+	// 2. Map-style brackets should not wrap the output
+	//
+	// This marker is intentionally cryptic to avoid collision with user data.
+	// It's only used internally and never appears in output.
+	markerNoBrackets = "__DETHCL_NO_BRACKETS_MARKER__"
 )
 
 // File extension constants
