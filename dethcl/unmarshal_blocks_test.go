@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/genelet/horizon/utils"
+	"github.com/genelet/schema"
 )
 
 // These are integration-style tests that verify block processing works correctly
@@ -35,7 +35,7 @@ func TestUnmarshalMap2Struct(t *testing.T) {
 	`)
 
 	// Create spec for nested field
-	spec, err := utils.NewStruct("Outer",
+	spec, err := schema.NewStruct("Outer",
 		map[string]any{
 			"Nested": map[[2]string]string{{"", ""}: "Inner"},
 		},
@@ -99,7 +99,7 @@ func TestUnmarshalMapStruct(t *testing.T) {
 		}
 	`)
 
-	spec, err := utils.NewStruct("Root",
+	spec, err := schema.NewStruct("Root",
 		map[string]any{
 			"Configs": map[string]string{"": "Config"},
 		},
@@ -160,7 +160,7 @@ func TestUnmarshalListStruct(t *testing.T) {
 		}
 	`)
 
-	spec, err := utils.NewStruct("Root",
+	spec, err := schema.NewStruct("Root",
 		map[string]any{
 			"Items": []string{"Item"},
 		},
@@ -216,7 +216,7 @@ func TestUnmarshalSingleStruct(t *testing.T) {
 		}
 	`)
 
-	spec, err := utils.NewStruct("Document",
+	spec, err := schema.NewStruct("Document",
 		map[string]any{
 			"Metadata": "Metadata",
 		},
@@ -263,7 +263,7 @@ func TestProcessBlockFieldsErrorMissingRef(t *testing.T) {
 		}
 	`)
 
-	spec, err := utils.NewStruct("Outer",
+	spec, err := schema.NewStruct("Outer",
 		map[string]any{
 			"Nested": "Inner",
 		},

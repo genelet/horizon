@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/genelet/horizon/utils"
+	"github.com/genelet/schema"
 )
 
 func TestMHclSimple(t *testing.T) {
@@ -60,7 +60,7 @@ func TestMHclShape(t *testing.T) {
 	g := &geo{}
 	c := &circle{}
 	ref := map[string]any{"circle": c}
-	spec, err := utils.NewStruct(
+	spec, err := schema.NewStruct(
 		"geo", map[string]any{"Shape": "circle"})
 	if err == nil {
 		err = UnmarshalSpec([]byte(data1), g, spec, ref)
@@ -92,7 +92,7 @@ func TestMHclMoreShape(t *testing.T) {
 	c := &circle{}
 	s := &square{}
 	ref := map[string]any{"circle": c, "square": s}
-	spec, err := utils.NewStruct(
+	spec, err := schema.NewStruct(
 		"geo", map[string]any{"Shape": "square"})
 	if err == nil {
 		err = UnmarshalSpec([]byte(data2), g, spec, ref)
@@ -124,7 +124,7 @@ func TestMHclMoreShape(t *testing.T) {
 	}
 `
 	p := &picture{}
-	spec, err = utils.NewStruct(
+	spec, err = schema.NewStruct(
 		"Picture", map[string]any{
 			"Drawings": []string{"square", "square"}})
 	if err != nil {
@@ -163,7 +163,7 @@ func TestMHclMoreShape(t *testing.T) {
 `
 
 	p = &picture{}
-	spec, err = utils.NewStruct(
+	spec, err = schema.NewStruct(
 		"Picture", map[string]any{
 			"Drawings": []string{"moresquare", "moresquare"}})
 	if err != nil {
@@ -206,7 +206,7 @@ func TestMHash(t *testing.T) {
 `
 	g := &geometry{}
 	ref := map[string]any{"square": new(square)}
-	spec, err := utils.NewStruct(
+	spec, err := schema.NewStruct(
 		"geometry", map[string]any{
 			"Shapes": []string{"square", "square"}})
 	if err == nil {
@@ -255,7 +255,7 @@ func TestMPointerHash(t *testing.T) {
 `
 	g := &geometry{}
 	ref := map[string]any{"square": new(square)}
-	spec, err := utils.NewStruct(
+	spec, err := schema.NewStruct(
 		"geometry", map[string]any{
 			"Shapes": []string{"square", "square"}})
 	if err == nil {
@@ -465,7 +465,7 @@ y11 k6 {
 }
 
 `
-	spec, err := utils.NewStruct(
+	spec, err := schema.NewStruct(
 		"frame", map[string]any{
 			"X1": [2]any{
 				"geo", map[string]any{"Shape": "circle"},
@@ -528,7 +528,7 @@ brand {
 
 	ref := map[string]any{"geo": &geo{}, "circle": &circle{}, "toy": &toy{}}
 	c := new(child)
-	spec, err := utils.NewStruct(
+	spec, err := schema.NewStruct(
 		"child1", map[string]any{
 			"Brand": [2]any{
 				"toy", map[string]any{
@@ -575,7 +575,7 @@ func TestMHclPainting(t *testing.T) {
 
 	ref := map[string]any{"square": new(square)}
 	p := &config{}
-	spec, err := utils.NewStruct(
+	spec, err := schema.NewStruct(
 		"config", map[string]any{
 			"Drawings": []string{"square", "square"}})
 	if err == nil {

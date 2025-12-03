@@ -5,13 +5,14 @@ import (
 	"reflect"
 
 	"github.com/genelet/horizon/utils"
+	"github.com/genelet/schema"
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 )
 
 // processBlockFields handles complex block fields based on their spec type.
 // This includes Map2Struct, MapStruct, ListStruct, and SingleStruct.
-func processBlockFields(node *utils.Tree, file *hcl.File, ref map[string]any, oriFields []reflect.StructField, oriblock map[string][]*hclsyntax.Block, objectMap map[string]*utils.Value, oriTobe reflect.Value) error {
+func processBlockFields(node *utils.Tree, file *hcl.File, ref map[string]any, oriFields []reflect.StructField, oriblock map[string][]*hclsyntax.Block, objectMap map[string]*schema.Value, oriTobe reflect.Value) error {
 	for _, field := range oriFields {
 		tag := (parseHCLTag(field.Tag))[0]
 		blocks := oriblock[tag]
@@ -48,7 +49,7 @@ func processBlockFields(node *utils.Tree, file *hcl.File, ref map[string]any, or
 }
 
 // processMap2StructField handles fields with Map2Struct spec (map with 2 labels).
-func processMap2StructField(node *utils.Tree, file *hcl.File, ref map[string]any, field reflect.StructField, blocks []*hclsyntax.Block, mapSpec *utils.Map2Struct, oriTobe reflect.Value) error {
+func processMap2StructField(node *utils.Tree, file *hcl.File, ref map[string]any, field reflect.StructField, blocks []*hclsyntax.Block, mapSpec *schema.Map2Struct, oriTobe reflect.Value) error {
 	name := field.Name
 	tag := (parseHCLTag(field.Tag))[0]
 	typ := field.Type
@@ -138,7 +139,7 @@ func processMap2StructField(node *utils.Tree, file *hcl.File, ref map[string]any
 }
 
 // processMapStructField handles fields with MapStruct spec (map with 1 label).
-func processMapStructField(node *utils.Tree, file *hcl.File, ref map[string]any, field reflect.StructField, blocks []*hclsyntax.Block, mapSpec *utils.MapStruct, oriTobe reflect.Value) error {
+func processMapStructField(node *utils.Tree, file *hcl.File, ref map[string]any, field reflect.StructField, blocks []*hclsyntax.Block, mapSpec *schema.MapStruct, oriTobe reflect.Value) error {
 	name := field.Name
 	tag := (parseHCLTag(field.Tag))[0]
 	typ := field.Type
@@ -201,7 +202,7 @@ func processMapStructField(node *utils.Tree, file *hcl.File, ref map[string]any,
 }
 
 // processListStructField handles fields with ListStruct spec (slice or map without labels).
-func processListStructField(node *utils.Tree, file *hcl.File, ref map[string]any, field reflect.StructField, blocks []*hclsyntax.Block, listSpec *utils.ListStruct, oriTobe reflect.Value) error {
+func processListStructField(node *utils.Tree, file *hcl.File, ref map[string]any, field reflect.StructField, blocks []*hclsyntax.Block, listSpec *schema.ListStruct, oriTobe reflect.Value) error {
 	name := field.Name
 	tag := (parseHCLTag(field.Tag))[0]
 	typ := field.Type
@@ -271,7 +272,7 @@ func processListStructField(node *utils.Tree, file *hcl.File, ref map[string]any
 }
 
 // processSingleStructField handles fields with SingleStruct spec (single nested struct).
-func processSingleStructField(node *utils.Tree, file *hcl.File, ref map[string]any, field reflect.StructField, block *hclsyntax.Block, singleSpec *utils.Struct, oriTobe reflect.Value) error {
+func processSingleStructField(node *utils.Tree, file *hcl.File, ref map[string]any, field reflect.StructField, block *hclsyntax.Block, singleSpec *schema.Struct, oriTobe reflect.Value) error {
 	name := field.Name
 	tag := (parseHCLTag(field.Tag))[0]
 	f := oriTobe.Elem().FieldByName(name)

@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/genelet/horizon/utils"
+	"github.com/genelet/schema"
 )
 
 func TestHclSimple(t *testing.T) {
@@ -32,7 +32,7 @@ func TestHclShape1(t *testing.T) {
 	g := &geo{}
 	c := &circle{}
 	ref := map[string]any{"circle": c}
-	spec, err := utils.NewStruct(
+	spec, err := schema.NewStruct(
 		"geo", map[string]any{"Shape": "circle"})
 	if err == nil {
 		err = UnmarshalSpec([]byte(data1), g, spec, ref)
@@ -54,7 +54,7 @@ func TestHclShape1(t *testing.T) {
 	g = &geo{}
 	s := &square{}
 	ref = map[string]any{"circle": c, "square": s}
-	spec, err = utils.NewStruct(
+	spec, err = schema.NewStruct(
 		"geo", map[string]any{"Shape": "square"})
 	if err == nil {
 		err = UnmarshalSpec([]byte(data2), g, spec, ref)
@@ -80,7 +80,7 @@ func TestHclShape2(t *testing.T) {
 	}
 `
 	p := &picture{}
-	spec, err := utils.NewStruct(
+	spec, err := schema.NewStruct(
 		"Picture", map[string]any{
 			"Drawings": []string{"square", "square"}})
 	if err != nil {
@@ -115,7 +115,7 @@ func TestHclShape2(t *testing.T) {
     }
 `
 	p = &picture{}
-	spec, err = utils.NewStruct(
+	spec, err = schema.NewStruct(
 		"Picture", map[string]any{
 			"Drawings": []string{"moresquare", "moresquare"}})
 	if err != nil {
@@ -236,7 +236,7 @@ func TestHash(t *testing.T) {
 `
 	ref := map[string]any{"square": new(square)}
 	g := &geometry{}
-	spec, err := utils.NewStruct(
+	spec, err := schema.NewStruct(
 		"geometry", map[string]any{
 			"Shapes": []string{"square", "square"}})
 	if err == nil {
@@ -398,7 +398,7 @@ y11 k7 {
 }
 
 `
-	spec, err := utils.NewStruct(
+	spec, err := schema.NewStruct(
 		"frame", map[string]any{
 			"X1": [2]any{
 				"geo", map[string]any{"Shape": "circle"},
@@ -465,7 +465,7 @@ brand {
 `
 	ref := map[string]any{"geo": &geo{}, "circle": &circle{}, "toy": &toy{}}
 	c := new(child)
-	spec, err := utils.NewStruct(
+	spec, err := schema.NewStruct(
 		"child1", map[string]any{
 			"Brand": [2]any{
 				"toy", map[string]any{
@@ -498,7 +498,7 @@ brand = {
 `
 	ref := map[string]any{"geo": &geo{}, "circle": &circle{}, "toy": &toy{}}
 	c := new(child)
-	spec, err := utils.NewStruct(
+	spec, err := schema.NewStruct(
 		"child1", map[string]any{
 			"Brand": [2]any{
 				"toy", map[string]any{
@@ -623,7 +623,7 @@ func TestMapList(t *testing.T) {
 	}
 
 	xc := &xclass{}
-	tr, err := utils.NewStruct(typ.Name(), spec)
+	tr, err := schema.NewStruct(typ.Name(), spec)
 	if err == nil {
 		err = UnmarshalSpec(bs, xc, tr, ref)
 	}

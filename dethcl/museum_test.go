@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/genelet/horizon/utils"
+	"github.com/genelet/schema"
 )
 
 type museum struct {
@@ -97,7 +97,7 @@ func TestMapSliceNew(t *testing.T) {
 		"picture": new(picture),
 		"museum":  new(museum),
 	}
-	spec, err := utils.NewStruct(
+	spec, err := schema.NewStruct(
 		"museum", map[string]any{
 			"Arts": map[string][2]any{
 				"first": {"picture", map[string]any{
@@ -307,7 +307,7 @@ func TestMap2Read(t *testing.T) {
 		"picture": new(picture),
 		"museum2": new(museum2),
 	}
-	spec, err := utils.NewStruct(
+	spec, err := schema.NewStruct(
 		"museum2", map[string]any{
 			"Arts": map[[2]string][2]any{
 				{"first", "x1"}: {"picture", map[string]any{
@@ -385,7 +385,7 @@ func TestMap20Read(t *testing.T) {
 		"picture": new(picture),
 		"museum2": new(museum2),
 	}
-	spec, err := utils.NewStruct(
+	spec, err := schema.NewStruct(
 		"museum2", map[string]any{
 			"Arts": map[[2]string][2]any{
 				{"first"}: {"picture", map[string]any{

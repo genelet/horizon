@@ -1,7 +1,7 @@
 package dethcl
 
 import (
-	"github.com/genelet/horizon/utils"
+	"github.com/genelet/schema"
 )
 
 type inter interface {
@@ -78,7 +78,7 @@ type Painting struct {
 }
 
 func (p *Painting) UnmarshalHCL(dat []byte, labels ...string) error {
-	spec, err := utils.NewStruct(
+	spec, err := schema.NewStruct(
 		"Painting", map[string]any{
 			"Drawings": []string{"square", "square"},
 		},

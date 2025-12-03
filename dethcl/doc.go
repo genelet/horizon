@@ -45,7 +45,7 @@
 //	}
 //
 //	// Create specification telling how to decode the interface
-//	spec, err := utils.NewStruct("Geo", map[string]any{
+//	spec, err := schema.NewStruct("Geo", map[string]any{
 //	    "Shape": "Circle",  // Shape field should be decoded as Circle type
 //	})
 //

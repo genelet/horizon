@@ -9,6 +9,7 @@ import (
 	"unicode"
 
 	"github.com/genelet/horizon/utils"
+	"github.com/genelet/schema"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
@@ -75,13 +76,13 @@ func Unmarshal(hclData []byte, current any, labels ...string) error {
 // Parameters:
 //   - hclData: HCL data as bytes
 //   - current: pointer to target struct
-//   - spec: Struct specification describing interface field types (created with utils.NewStruct)
+//   - spec: Struct specification describing interface field types (created with schema.NewStruct)
 //   - ref: type registry mapping type names to zero-value instances
 //   - labels: optional HCL label values
 //
 // The spec parameter describes how interface fields should be decoded:
 //
-//	spec, err := utils.NewStruct("Geo", map[string]any{
+//	spec, err := schema.NewStruct("Geo", map[string]any{
 //	    "Shape": "Circle",  // Shape interface should be decoded as Circle
 //	})
 //
@@ -103,14 +104,14 @@ func Unmarshal(hclData []byte, current any, labels ...string) error {
 //	}
 //
 //	hcl := []byte(`name = "test"\nshape { radius = 5.0 }`)
-//	spec, _ := utils.NewStruct("Geo", map[string]any{"Shape": "Circle"})
+//	spec, _ := schema.NewStruct("Geo", map[string]any{"Shape": "Circle"})
 //	ref := map[string]any{"Circle": &Circle{}, "Geo": &Geo{}}
 //
 //	var geo Geo
 //	err := UnmarshalSpec(hcl, &geo, spec, ref)
 //
 // Returns an error if decoding fails or if referenced types are not in ref map.
-func UnmarshalSpec(hclData []byte, current any, spec *utils.Struct, ref map[string]any, labels ...string) error {
+func UnmarshalSpec(hclData []byte, current any, spec *schema.Struct, ref map[string]any, labels ...string) error {
 	node, ref := utils.NewTreeCtyFunction(ref)
 	return UnmarshalSpecTree(node, hclData, current, spec, ref, labels...)
 }
@@ -135,7 +136,7 @@ func UnmarshalSpec(hclData []byte, current any, spec *utils.Struct, ref map[stri
 // Example:
 //
 //	node, ref := utils.NewTreeCtyFunction(ref)
-//	spec, _ := utils.NewStruct("Config", map[string]any{
+//	spec, _ := schema.NewStruct("Config", map[string]any{
 //	    "Database": "PostgresDB",
 //	})
 //
@@ -144,7 +145,7 @@ func UnmarshalSpec(hclData []byte, current any, spec *utils.Struct, ref map[stri
 //
 // Returns an error if decoding fails, if the target is not a pointer, or if referenced
 // types are not found in the ref map.
-func UnmarshalSpecTree(node *utils.Tree, hclData []byte, current any, spec *utils.Struct, ref map[string]any, labels ...string) error {
+func UnmarshalSpecTree(node *utils.Tree, hclData []byte, current any, spec *schema.Struct, ref map[string]any, labels ...string) error {
 	reflectValue := reflect.ValueOf(current)
 	if reflectValue.Kind() != reflect.Pointer {
 		return fmt.Errorf("non-pointer or nil data")
@@ -174,12 +175,12 @@ func UnmarshalSpecTree(node *utils.Tree, hclData []byte, current any, spec *util
 	}
 
 	// Get spec fields or create empty map
-	var objectMap map[string]*utils.Value
+	var objectMap map[string]*schema.Value
 	if spec != nil {
 		objectMap = spec.GetFields()
 	}
 	if objectMap == nil {
-		objectMap = make(map[string]*utils.Value)
+		objectMap = make(map[string]*schema.Value)
 	}
 
 	// Parse HCL file
@@ -254,7 +255,7 @@ func UnmarshalSpecTree(node *utils.Tree, hclData []byte, current any, spec *util
 //   - labels: optional HCL label values
 //
 // Returns error if unmarshaling fails.
-func tryUnmarshalWithCustom(subnode *utils.Tree, hclData []byte, trial any, nextStruct *utils.Struct, ref map[string]any, labels ...string) error {
+func tryUnmarshalWithCustom(subnode *utils.Tree, hclData []byte, trial any, nextStruct *schema.Struct, ref map[string]any, labels ...string) error {
 	unmarshaler, ok := trial.(Unmarshaler)
 	if ok {
 		return unmarshaler.UnmarshalHCL(hclData, labels...)
@@ -441,7 +442,7 @@ type structFieldCategories struct {
 }
 
 // categorizeStructFields analyzes struct fields and categorizes them into different types
-func categorizeStructFields(structType reflect.Type, objectMap map[string]*utils.Value, ref map[string]any, nullAttrs []string) (*structFieldCategories, error) {
+func categorizeStructFields(structType reflect.Type, objectMap map[string]*schema.Value, ref map[string]any, nullAttrs []string) (*structFieldCategories, error) {
 	categories := &structFieldCategories{}
 	for i := 0; i < structType.NumField(); i++ {
 		field := structType.Field(i)
@@ -505,10 +506,10 @@ func categorizeStructFields(structType reflect.Type, objectMap map[string]*utils
 	return categories, nil
 }
 
-func handleStructField(field reflect.StructField, fieldType reflect.Type, objectMap map[string]*utils.Value, ref map[string]any, categories *structFieldCategories) error {
+func handleStructField(field reflect.StructField, fieldType reflect.Type, objectMap map[string]*schema.Value, ref map[string]any, categories *structFieldCategories) error {
 	typeName := fieldType.String()
 	ref[typeName] = reflect.New(fieldType).Interface()
-	valueSpec, err := utils.NewValue(typeName)
+	valueSpec, err := schema.NewValue(typeName)
 	if err != nil {
 		return err
 	}
@@ -517,7 +518,7 @@ func handleStructField(field reflect.StructField, fieldType reflect.Type, object
 	return nil
 }
 
-func handleMap2Field(field reflect.StructField, fieldType reflect.Type, objectMap map[string]*utils.Value, ref map[string]any, categories *structFieldCategories) error {
+func handleMap2Field(field reflect.StructField, fieldType reflect.Type, objectMap map[string]*schema.Value, ref map[string]any, categories *structFieldCategories) error {
 	elemType := fieldType.Elem()
 	typeName := elemType.String()
 
@@ -534,7 +535,7 @@ func handleMap2Field(field reflect.StructField, fieldType reflect.Type, objectMa
 		return nil
 	}
 	// use 2 empty strings here as key, then firstFirst in unmarshaling as default
-	valueSpec, err := utils.NewValue(map[[2]string]string{{"", ""}: typeName})
+	valueSpec, err := schema.NewValue(map[[2]string]string{{"", ""}: typeName})
 	if err != nil {
 		return err
 	}
@@ -543,7 +544,7 @@ func handleMap2Field(field reflect.StructField, fieldType reflect.Type, objectMa
 	return nil
 }
 
-func handleSliceOrMapField(field reflect.StructField, fieldType reflect.Type, objectMap map[string]*utils.Value, ref map[string]any, categories *structFieldCategories) error {
+func handleSliceOrMapField(field reflect.StructField, fieldType reflect.Type, objectMap map[string]*schema.Value, ref map[string]any, categories *structFieldCategories) error {
 	elemType := fieldType.Elem()
 	typeName := elemType.String()
 
@@ -560,7 +561,7 @@ func handleSliceOrMapField(field reflect.StructField, fieldType reflect.Type, ob
 		return nil
 	}
 
-	valueSpec, err := utils.NewValue([]string{typeName})
+	valueSpec, err := schema.NewValue([]string{typeName})
 	if err != nil {
 		return err
 	}

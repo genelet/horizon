@@ -7,7 +7,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/genelet/horizon/utils"
+	"github.com/genelet/schema"
 )
 
 // clone creates a new zero-value instance of the same type as old.
@@ -56,7 +56,7 @@ func generateTempHCLFileName() string {
 
 // getFirstStructFromMap returns the first struct from a map using deterministic key order.
 // This ensures consistent behavior across runs since Go map iteration order is random.
-func getFirstStructFromMap(m map[string]*utils.Struct) *utils.Struct {
+func getFirstStructFromMap(m map[string]*schema.Struct) *schema.Struct {
 	if len(m) == 0 {
 		return nil
 	}
@@ -69,7 +69,7 @@ func getFirstStructFromMap(m map[string]*utils.Struct) *utils.Struct {
 }
 
 // getFirstMapStructFromMap returns the first MapStruct from a map using deterministic key order.
-func getFirstMapStructFromMap(m map[string]*utils.MapStruct) *utils.MapStruct {
+func getFirstMapStructFromMap(m map[string]*schema.MapStruct) *schema.MapStruct {
 	if len(m) == 0 {
 		return nil
 	}
