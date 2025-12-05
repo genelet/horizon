@@ -6,6 +6,7 @@ _Determined_ marshals and unmarshals JSON and HCL data to _go struct_ containing
 
 - Chapter 1: [Marshal GO Object into HCL](#chapter-1-marshal-go-object-into-hcl) (for encoding HCL object)
 - Chapter 2: [Unmarshal HCL Data to GO Object](#chapter-2-unmarshal-hcl-data-to-go-object) (for dynamic HCL decoding)
+  - 2.5: [Enhanced UnmarshalSpec with Auto-Discovery](#25-enhanced-unmarshalspec-with-auto-discovery)
 - Chapter 3: [Conversion among Data Formats HCL, JSON and YAML](#chapter-3-conversion-among-data-formats-hcl-json-and-yaml)
 
 To download,
@@ -697,6 +698,69 @@ the program outputs:
     &main.square{SX:5, SY:6}
 ```
 The output is populated properly into specified objects.
+
+## 2.5 Enhanced UnmarshalSpec with Auto-Discovery
+
+The `UnmarshalSpec` function has been enhanced to automatically discover struct types, reducing the need for manual `ref` map construction.
+
+**Auto-Discovery Behavior:**
+
+`UnmarshalSpec` now internally auto-discovers struct types from the target object, so concrete struct types are automatically found. You only need to provide:
+1. Types that cannot be auto-discovered (interface implementations)
+2. Explicit overrides for type resolution
+
+**Passing Implementations:**
+
+The `ref` map can include `[]any` values to specify interface implementations:
+
+```go
+ref := map[string]any{
+    // Interface implementations ([]any values)
+    "Shape": []any{new(Circle), new(Square)},
+
+    // Explicit type overrides (optional)
+    "CustomType": new(MyCustomType),
+}
+
+err := dethcl.UnmarshalSpec(hclData, &config, spec, ref)
+```
+
+**Simplified Usage Example:**
+
+Before (manual ref construction):
+```go
+ref := map[string]any{
+    "Config":   new(Config),
+    "Team":     new(Team),
+    "Auth":     new(Auth),
+    "DBIssuer": new(DBIssuer),
+    // ... many more types
+}
+err := dethcl.UnmarshalSpec(data, &config, spec, ref)
+```
+
+After (with auto-discovery):
+```go
+// Only specify interface implementations
+ref := map[string]any{
+    "Squad":         []any{new(Team)},
+    "Authenticator": []any{new(Auth)},
+    "Issuer":        []any{new(DBIssuer), new(PlainIssuer)},
+}
+err := dethcl.UnmarshalSpec(data, &config, spec, ref)
+```
+
+**How it works internally:**
+1. Starts from the target object and traverses all fields recursively
+2. For struct fields: adds the struct type to the internal ref map
+3. For interface fields: looks up the implementations from `[]any` values in the passed ref
+4. For map/slice fields: processes the element type recursively
+5. Adds both short names and package-qualified names for each type
+
+**Important Notes:**
+- Go reflection cannot discover which types implement an interface, so you must provide interface implementations as `[]any` values in the ref map
+- Package-qualified names (e.g., `"cell.Config"`) are automatically added alongside short names
+- Explicitly passed ref values take precedence over auto-discovered types
 
 <br>
 

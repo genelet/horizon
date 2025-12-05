@@ -77,7 +77,7 @@ func Unmarshal(hclData []byte, current any, labels ...string) error {
 //   - hclData: HCL data as bytes
 //   - current: pointer to target struct
 //   - spec: Struct specification describing interface field types (created with schema.NewStruct)
-//   - ref: type registry mapping type names to zero-value instances
+//   - ref: type registry mapping type names to zero-value instances (can be nil)
 //   - labels: optional HCL label values
 //
 // The spec parameter describes how interface fields should be decoded:
@@ -86,13 +86,22 @@ func Unmarshal(hclData []byte, current any, labels ...string) error {
 //	    "Shape": "Circle",  // Shape interface should be decoded as Circle
 //	})
 //
-// The ref parameter provides zero-value instances for all possible types:
+// The ref parameter provides zero-value instances for interface implementations.
+// It can also provide a map of interface names to implementation slices, which
+// will be expanded automatically using collectStructTypesFromObject:
 //
+//	// Option 1: Direct type instances
 //	ref := map[string]any{
 //	    "Circle": &Circle{},
 //	    "Square": &Square{},
-//	    "Geo":    &Geo{},
 //	}
+//
+//	// Option 2: Interface implementations (auto-expanded)
+//	ref := map[string]any{
+//	    "Shape": []any{&Circle{}, &Square{}},
+//	}
+//
+// If ref is nil or empty, struct types are auto-discovered from the target object.
 //
 // Example:
 //
@@ -105,15 +114,33 @@ func Unmarshal(hclData []byte, current any, labels ...string) error {
 //
 //	hcl := []byte(`name = "test"\nshape { radius = 5.0 }`)
 //	spec, _ := schema.NewStruct("Geo", map[string]any{"Shape": "Circle"})
-//	ref := map[string]any{"Circle": &Circle{}, "Geo": &Geo{}}
+//	ref := map[string]any{"Shape": []any{&Circle{}}}
 //
 //	var geo Geo
 //	err := UnmarshalSpec(hcl, &geo, spec, ref)
 //
 // Returns an error if decoding fails or if referenced types are not in ref map.
 func UnmarshalSpec(hclData []byte, current any, spec *schema.Struct, ref map[string]any, labels ...string) error {
-	node, ref := utils.NewTreeCtyFunction(ref)
-	return UnmarshalSpecTree(node, hclData, current, spec, ref, labels...)
+	// Extract implementations from ref (values that are []any)
+	implementations := make(map[string][]any)
+	for k, v := range ref {
+		if impls, ok := v.([]any); ok {
+			implementations[k] = impls
+		}
+	}
+
+	// Auto-collect struct types from the target object
+	autoRef := collectStructTypesFromObject(current, implementations)
+
+	// Merge passed ref into autoRef (passed ref takes precedence)
+	for k, v := range ref {
+		if _, isSlice := v.([]any); !isSlice {
+			autoRef[k] = v
+		}
+	}
+
+	node, mergedRef := utils.NewTreeCtyFunction(autoRef)
+	return UnmarshalSpecTree(node, hclData, current, spec, mergedRef, labels...)
 }
 
 // UnmarshalSpecTree decodes HCL data with interface specifications at a specific tree node.

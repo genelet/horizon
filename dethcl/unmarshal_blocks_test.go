@@ -247,32 +247,33 @@ func TestUnmarshalSingleStruct(t *testing.T) {
 	}
 }
 
-// Test error case - missing struct type in ref map
+// Test error case - missing interface implementation in ref map
 func TestProcessBlockFieldsErrorMissingRef(t *testing.T) {
-	type Inner struct {
-		Value string `hcl:"value"`
+	type Processor interface {
+		Process() string
 	}
 
 	type Outer struct {
-		Nested Inner `hcl:"nested"`
+		Handler Processor `hcl:"handler,block"`
 	}
 
 	hclData := []byte(`
-		nested {
-			value = "test"
+		handler {
+			name = "test"
 		}
 	`)
 
 	spec, err := schema.NewStruct("Outer",
 		map[string]any{
-			"Nested": "Inner",
+			"Handler": "CustomHandler", // References a type not in ref
 		},
 	)
 	if err != nil {
 		t.Fatalf("failed to create spec: %v", err)
 	}
 
-	// Deliberately omit "Inner" from ref map
+	// Deliberately omit "CustomHandler" from ref map
+	// Since Processor is an interface, auto-discovery cannot find implementations
 	ref := map[string]any{}
 
 	result := &Outer{}
