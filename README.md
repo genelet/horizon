@@ -25,7 +25,6 @@ go get github.com/genelet/horizon
 
 - Chapter 1: [Marshal Go Object into HCL](#chapter-1-marshal-go-object-into-hcl)
 - Chapter 2: [Unmarshal HCL Data to Go Object](#chapter-2-unmarshal-hcl-data-to-go-object)
-  - 2.5: [Enhanced UnmarshalSpec with Auto-Discovery](#25-enhanced-unmarshalspec-with-auto-discovery)
 - Chapter 3: [Literals: true, false, and null](#chapter-3-literals-true-false-and-null)
 - Chapter 4: [Functions and Function Calls in HCL](#chapter-4-functions-and-function-calls-in-hcl)
 - Chapter 5: [Conversion among Data Formats HCL, JSON and YAML](#chapter-5-conversion-among-data-formats-hcl-json-and-yaml)
