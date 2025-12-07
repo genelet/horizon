@@ -30,7 +30,7 @@ func TestParseFieldInfo(t *testing.T) {
 		name     string
 		field    reflect.StructField
 		value    reflect.Value
-		expected *HCLFieldInfo
+		expected *hclFieldInfo
 		isNil    bool
 	}{
 		{
@@ -41,7 +41,7 @@ func TestParseFieldInfo(t *testing.T) {
 				Tag:  `hcl:"name"`,
 			},
 			value: reflect.ValueOf("test"),
-			expected: &HCLFieldInfo{
+			expected: &hclFieldInfo{
 				TagName:  "name",
 				Modifier: "",
 				IsLabel:  false,
@@ -57,7 +57,7 @@ func TestParseFieldInfo(t *testing.T) {
 				Tag:  `hcl:"type,label"`,
 			},
 			value: reflect.ValueOf("test"),
-			expected: &HCLFieldInfo{
+			expected: &hclFieldInfo{
 				TagName:  "type",
 				Modifier: "label",
 				IsLabel:  true,
@@ -73,7 +73,7 @@ func TestParseFieldInfo(t *testing.T) {
 				Tag:  `hcl:"config,block"`,
 			},
 			value: reflect.ValueOf("test"),
-			expected: &HCLFieldInfo{
+			expected: &hclFieldInfo{
 				TagName:  "config",
 				Modifier: "block",
 				IsLabel:  false,
@@ -109,7 +109,7 @@ func TestParseFieldInfo(t *testing.T) {
 				Tag:  `hcl:"optional,optional"`,
 			},
 			value: reflect.ValueOf("test"),
-			expected: &HCLFieldInfo{
+			expected: &hclFieldInfo{
 				TagName:  "optional",
 				Modifier: "optional",
 				IsLabel:  false,

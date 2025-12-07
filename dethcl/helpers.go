@@ -6,8 +6,8 @@ import (
 	"unicode"
 )
 
-// HCLFieldInfo contains parsed information about a struct field's HCL tags.
-type HCLFieldInfo struct {
+// hclFieldInfo contains parsed information about a struct field's HCL tags.
+type hclFieldInfo struct {
 	Field    reflect.StructField
 	Value    reflect.Value
 	TagName  string // e.g., "name"
@@ -19,7 +19,7 @@ type HCLFieldInfo struct {
 
 // parseFieldInfo extracts HCL tag information from a struct field.
 // Returns nil if the field should be ignored (unexported or tagged with "-").
-func parseFieldInfo(field reflect.StructField, value reflect.Value) *HCLFieldInfo {
+func parseFieldInfo(field reflect.StructField, value reflect.Value) *hclFieldInfo {
 	// Skip unexported fields
 	if !unicode.IsUpper([]rune(field.Name)[0]) {
 		return nil
@@ -34,7 +34,7 @@ func parseFieldInfo(field reflect.StructField, value reflect.Value) *HCLFieldInf
 		return nil
 	}
 
-	info := &HCLFieldInfo{
+	info := &hclFieldInfo{
 		Field:    field,
 		Value:    value,
 		TagName:  tagName,
@@ -49,8 +49,8 @@ func parseFieldInfo(field reflect.StructField, value reflect.Value) *HCLFieldInf
 
 // getStructFields returns parsed field information for all fields in a struct type.
 // Handles embedded structs recursively.
-func getStructFields(t reflect.Type, oriValue reflect.Value) ([]*HCLFieldInfo, error) {
-	var fields []*HCLFieldInfo
+func getStructFields(t reflect.Type, oriValue reflect.Value) ([]*hclFieldInfo, error) {
+	var fields []*hclFieldInfo
 
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i)
@@ -131,19 +131,19 @@ func isComplexField(fieldValue reflect.Value, fieldType reflect.Type) bool {
 	return false
 }
 
-// filterFieldsByType separates fields into different categories for processing.
+// fieldCategories separates fields into different categories for processing.
 type fieldCategories struct {
-	Labels  []*HCLFieldInfo // Fields marked with "label" modifier
-	Simple  []*HCLFieldInfo // Simple fields that can be encoded with gohcl
-	Complex []*HCLFieldInfo // Complex fields requiring special handling (blocks, interfaces, etc.)
+	Labels  []*hclFieldInfo // Fields marked with "label" modifier
+	Simple  []*hclFieldInfo // Simple fields that can be encoded with gohcl
+	Complex []*hclFieldInfo // Complex fields requiring special handling (blocks, interfaces, etc.)
 }
 
 // categorizeFields separates struct fields into labels, simple, and complex categories.
-func categorizeFields(fields []*HCLFieldInfo) *fieldCategories {
+func categorizeFields(fields []*hclFieldInfo) *fieldCategories {
 	cats := &fieldCategories{
-		Labels:  make([]*HCLFieldInfo, 0),
-		Simple:  make([]*HCLFieldInfo, 0),
-		Complex: make([]*HCLFieldInfo, 0),
+		Labels:  make([]*hclFieldInfo, 0),
+		Simple:  make([]*hclFieldInfo, 0),
+		Complex: make([]*hclFieldInfo, 0),
 	}
 
 	for _, info := range fields {
