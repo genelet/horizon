@@ -444,7 +444,22 @@ func getOutlier(field reflect.StructField, oriField reflect.Value, level int) ([
 		if isBlank(bs) {
 			return nil, nil
 		}
-		empty = append(empty, &marshalOut{extractHCLTagName(fieldTag), nil, bs, false})
+		// Check if the interface contains a primitive value.
+		// If so, render as attribute (encode=true) instead of block label.
+		encode := false
+		if typ.Kind() == reflect.Interface {
+			elem := oriField.Elem()
+			if elem.IsValid() {
+				switch elem.Kind() {
+				case reflect.String, reflect.Bool,
+					reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+					reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
+					reflect.Float32, reflect.Float64:
+					encode = true
+				}
+			}
+		}
+		empty = append(empty, &marshalOut{extractHCLTagName(fieldTag), nil, bs, encode})
 	case reflect.Struct:
 		var newCurrent any
 		if oriField.CanAddr() {
