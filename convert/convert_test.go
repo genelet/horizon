@@ -1,6 +1,7 @@
 package convert
 
 import (
+	"encoding/json"
 	"os"
 	"reflect"
 	"strings"
@@ -213,5 +214,37 @@ func TestErrorCases(t *testing.T) {
 				t.Errorf("unexpected error: %v", err)
 			}
 		})
+	}
+}
+
+func TestJSONToYAMLArray(t *testing.T) {
+	raw := []byte(`[{"a": 1}, {"b": 2}]`)
+	out, err := JSONToYAML(raw)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	var got []map[string]int
+	if err := yaml.Unmarshal(out, &got); err != nil {
+		t.Fatalf("failed to unmarshal YAML output: %v", err)
+	}
+	if len(got) != 2 || got[0]["a"] != 1 || got[1]["b"] != 2 {
+		t.Fatalf("unexpected YAML output: %#v", got)
+	}
+}
+
+func TestYAMLToJSONArray(t *testing.T) {
+	raw := []byte("- a\n- b\n")
+	out, err := YAMLToJSON(raw)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	var got []string
+	if err := json.Unmarshal(out, &got); err != nil {
+		t.Fatalf("failed to unmarshal JSON output: %v", err)
+	}
+	if !reflect.DeepEqual(got, []string{"a", "b"}) {
+		t.Fatalf("unexpected JSON output: %#v", got)
 	}
 }

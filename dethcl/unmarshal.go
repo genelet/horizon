@@ -60,6 +60,9 @@ func Unmarshal(hclData []byte, current any, labels ...string) error {
 	if rv.Kind() != reflect.Pointer {
 		return fmt.Errorf("non-pointer or nil data")
 	}
+	if rv.IsNil() {
+		return nil
+	}
 	unmarshaler, ok := current.(Unmarshaler)
 	if ok {
 		return unmarshaler.UnmarshalHCL(hclData, labels...)
@@ -176,6 +179,9 @@ func UnmarshalSpecTree(node *utils.Tree, hclData []byte, current any, spec *sche
 	reflectValue := reflect.ValueOf(current)
 	if reflectValue.Kind() != reflect.Pointer {
 		return fmt.Errorf("non-pointer or nil data")
+	}
+	if reflectValue.IsNil() {
+		return nil
 	}
 	reflectValue = reflectValue.Elem()
 

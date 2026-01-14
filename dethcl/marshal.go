@@ -169,6 +169,9 @@ func marshal(current any, level int, keyname ...string) ([]byte, error) {
 	structType := reflect.TypeOf(current)
 	structValue := reflect.ValueOf(current)
 	if structType.Kind() == reflect.Pointer {
+		if structValue.IsNil() {
+			return nil, nil
+		}
 		structType = structType.Elem()
 		structValue = structValue.Elem()
 	}
@@ -184,10 +187,13 @@ func marshal(current any, level int, keyname ...string) ([]byte, error) {
 		return nil, nil
 	case reflect.String:
 		if structValue.IsValid() {
-			return []byte(" = " + structValue.String()), nil
+			return []byte(fmt.Sprintf("= %q", structValue.String())), nil
 		}
 		return nil, nil
 	case reflect.Pointer:
+		if structValue.IsNil() {
+			return nil, nil
+		}
 		return marshal(structValue.Elem().Interface(), level, keyname...)
 	default:
 	}
@@ -311,6 +317,9 @@ func getFields(structType reflect.Type, structValue reflect.Value) ([]*marshalFi
 		if field.Anonymous && tagName == "" {
 			switch fieldType.Kind() {
 			case reflect.Ptr:
+				if fieldValue.IsNil() {
+					continue
+				}
 				embeddedFields, err := getFields(fieldType.Elem(), fieldValue.Elem())
 				if err != nil {
 					return nil, err
@@ -329,6 +338,9 @@ func getFields(structType reflect.Type, structValue reflect.Value) ([]*marshalFi
 
 		// treat field of type pointer e.g. *map[string]*Example, the same as map[string]*Example
 		if fieldType.Kind() == reflect.Pointer && (fieldType.Elem().Kind() == reflect.Slice || fieldType.Elem().Kind() == reflect.Map) {
+			if fieldValue.IsNil() {
+				continue
+			}
 			fieldType = fieldType.Elem()
 			fieldValue = fieldValue.Elem()
 			if !fieldValue.IsValid() {

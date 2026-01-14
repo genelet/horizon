@@ -65,6 +65,9 @@ func getStructFields(t reflect.Type, oriValue reflect.Value) ([]*hclFieldInfo, e
 		if field.Anonymous && info.TagName == "" {
 			typ := field.Type
 			if typ.Kind() == reflect.Ptr {
+				if fieldValue.IsNil() {
+					continue
+				}
 				typ = typ.Elem()
 				fieldValue = fieldValue.Elem()
 				if !fieldValue.IsValid() {
@@ -97,6 +100,9 @@ func getStructFields(t reflect.Type, oriValue reflect.Value) ([]*hclFieldInfo, e
 func isComplexField(fieldValue reflect.Value, fieldType reflect.Type) bool {
 	// Treat pointer fields the same as their underlying type for slices/maps
 	if fieldType.Kind() == reflect.Pointer && (fieldType.Elem().Kind() == reflect.Slice || fieldType.Elem().Kind() == reflect.Map) {
+		if fieldValue.IsNil() {
+			return false
+		}
 		fieldType = fieldType.Elem()
 		fieldValue = fieldValue.Elem()
 		if !fieldValue.IsValid() {

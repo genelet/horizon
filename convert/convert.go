@@ -21,7 +21,7 @@ func convertFormat(raw []byte, unmarshal UnmarshalFunc, marshal MarshalFunc) ([]
 		return nil, fmt.Errorf("input is empty")
 	}
 
-	obj := map[string]any{}
+	var obj any
 	if err := unmarshal(raw, &obj); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal input: %w", err)
 	}
@@ -35,6 +35,23 @@ func convertFormat(raw []byte, unmarshal UnmarshalFunc, marshal MarshalFunc) ([]
 // hclUnmarshal wraps dethcl.Unmarshal to match the UnmarshalFunc signature.
 // dethcl.Unmarshal has variadic labels parameter which we don't need for format conversion.
 func hclUnmarshal(data []byte, v any) error {
+	if target, ok := v.(*any); ok {
+		var obj map[string]any
+		errMap := dethcl.Unmarshal(data, &obj)
+		if errMap == nil {
+			*target = obj
+			return nil
+		}
+
+		var arr []any
+		errArr := dethcl.Unmarshal(data, &arr)
+		if errArr == nil {
+			*target = arr
+			return nil
+		}
+
+		return fmt.Errorf("failed to unmarshal HCL as object (%v) or list (%v)", errMap, errArr)
+	}
 	return dethcl.Unmarshal(data, v)
 }
 

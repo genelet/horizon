@@ -28,7 +28,13 @@ func unmarshalToMap(node *utils.Tree, dat []byte, current any) error {
 	if err != nil {
 		return err
 	}
-	x := current.(*map[string]any)
+	x, ok := current.(*map[string]any)
+	if !ok {
+		return fmt.Errorf("expected *map[string]any, got %T", current)
+	}
+	if *x == nil {
+		*x = make(map[string]any, len(obj))
+	}
 	for k, v := range obj {
 		(*x)[k] = v
 	}
@@ -55,7 +61,10 @@ func unmarshalToSlice(node *utils.Tree, dat []byte, current any) error {
 	if err != nil {
 		return err
 	}
-	x := current.(*[]any)
+	x, ok := current.(*[]any)
+	if !ok {
+		return fmt.Errorf("expected *[]any, got %T", current)
+	}
 	*x = append(*x, obj...)
 	return nil
 }
