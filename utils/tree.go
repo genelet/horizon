@@ -18,17 +18,33 @@ const (
 //
 // Tree is thread-safe for concurrent access. All methods use appropriate locking
 // to protect shared state. The Data field uses sync.Map for lock-free concurrent access.
+//
+// The ref field holds the evaluation context map (attributes tree + cty functions)
+// assigned by NewTreeCtyFunction. Callers retrieve it via GetRef instead of
+// managing a separate map[string]any alongside the Tree pointer.
 type Tree struct {
 	mu    sync.RWMutex
 	Name  string
 	Data  sync.Map
 	Up    *Tree
 	Downs []*Tree
+	ref   map[string]any // evaluation context owned by this node; set by NewTreeCtyFunction
 }
 
 // NewTree creates a new tree with the given name
 func NewTree(name string) *Tree {
 	return &Tree{Name: name, Data: sync.Map{}}
+}
+
+// GetRef returns the evaluation context map associated with this tree node.
+// The map contains ContextKeyAttributes (the Tree itself) and ContextKeyFunctions
+// (cty functions), and is set by NewTreeCtyFunction. Returns nil if
+// NewTreeCtyFunction has not been called for this node.
+// Thread-safe.
+func (t *Tree) GetRef() map[string]any {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+	return t.ref
 }
 
 // AddNode adds a new node to the tree. It returns the newly created node.

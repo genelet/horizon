@@ -461,27 +461,26 @@ func CtyVariables(tree *Tree) map[string]cty.Value {
 	return hash
 }
 
-// NewTreeCtyFunction returns the default tree and a map containing default cty functions.
+// NewEvalContext initialises an HCL expression evaluation context.
 //
-// This function initializes or reuses a Tree node for HCL variable context and sets up
-// the default cty function library for HCL expression evaluation.
+// It creates (or reuses) a Tree node as the variable scope root and populates
+// the ref map with the built-in cty function library. The ref map is stored on
+// the node and retrievable via Tree.GetRef, so callers only need the *Tree pointer.
 //
 // Parameters:
-//   - ref: Context map. If nil, a new map will be created.
+//   - ref: existing context map to extend. If nil, a new map is created.
+//     The map may contain:
+//   - ref[ContextKeyAttributes]: an existing *Tree to reuse
+//   - ref[ContextKeyFunctions]:  existing functions to merge with built-ins
 //
-// The ref map is modified to include:
-//   - ref[ATTRIBUTES]: A Tree node for variable storage (created if not present)
-//   - ref[FUNCTIONS]: Default cty functions from ilang.CoreFunctions (merged if already present)
+// Returns the variable-scope root node. Call node.GetRef() to obtain the
+// evaluation context map when needed (e.g. to pass to UnmarshalSpecTree).
 //
-// Returns:
-//   - *Tree: The Tree node for storing variables (from ref[ATTRIBUTES])
-//   - map[string]any: The ref map with both ATTRIBUTES and FUNCTIONS set
+// Example:
 //
-// Usage:
-//
-//	node, ref := NewTreeCtyFunction(nil)
-//	// Now ref[ATTRIBUTES] contains the tree and ref[FUNCTIONS] contains cty functions
-func NewTreeCtyFunction(ref map[string]any) (*Tree, map[string]any) {
+//	node := utils.NewEvalContext(nil)
+//	ref  := node.GetRef()
+func NewEvalContext(ref map[string]any) *Tree {
 	if ref == nil {
 		ref = make(map[string]any)
 	}
@@ -501,5 +500,9 @@ func NewTreeCtyFunction(ref map[string]any) (*Tree, map[string]any) {
 		}
 	}
 
-	return node, ref
+	node.mu.Lock()
+	node.ref = ref
+	node.mu.Unlock()
+
+	return node
 }

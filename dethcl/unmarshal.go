@@ -142,8 +142,8 @@ func UnmarshalSpec(hclData []byte, current any, spec *schema.Struct, ref map[str
 		}
 	}
 
-	node, mergedRef := utils.NewTreeCtyFunction(autoRef)
-	return UnmarshalSpecTree(node, hclData, current, spec, mergedRef, labels...)
+	node := utils.NewEvalContext(autoRef)
+	return UnmarshalSpecTree(node, hclData, current, spec, node.GetRef(), labels...)
 }
 
 // UnmarshalSpecTree decodes HCL data with interface specifications at a specific tree node.
@@ -153,7 +153,7 @@ func UnmarshalSpec(hclData []byte, current any, spec *schema.Struct, ref map[str
 // you need fine-grained control over the variable resolution context.
 //
 // Parameters:
-//   - node: tree node for variable scope management (created with utils.NewTreeCtyFunction)
+//   - node: tree node for variable scope management (created with utils.NewEvalContext)
 //   - hclData: HCL data as bytes
 //   - current: pointer to target struct, map[string]any, or []any
 //   - spec: struct specification describing interface field types (nil for no interfaces)
@@ -165,7 +165,7 @@ func UnmarshalSpec(hclData []byte, current any, spec *schema.Struct, ref map[str
 //
 // Example:
 //
-//	node, ref := utils.NewTreeCtyFunction(ref)
+//	node, ref := utils.NewEvalContext(ref)
 //	spec, _ := schema.NewStruct("Config", map[string]any{
 //	    "Database": "PostgresDB",
 //	})

@@ -112,7 +112,7 @@ func TestAddBlocksToTree(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			node, _ := utils.NewTreeCtyFunction(nil)
+			node := utils.NewEvalContext(nil)
 			addBlocksToTree(node, tt.blocks)
 
 			// Verify the blocks were added
@@ -209,7 +209,7 @@ func TestUnmarshalToMap(t *testing.T) {
 	`)
 
 	result := make(map[string]any)
-	node, _ := utils.NewTreeCtyFunction(nil)
+	node := utils.NewEvalContext(nil)
 
 	err := unmarshalToMap(node, hclData, &result)
 	if err != nil {
@@ -248,7 +248,7 @@ func TestUnmarshalToSlice(t *testing.T) {
 	]`)
 
 	result := make([]any, 0)
-	node, _ := utils.NewTreeCtyFunction(nil)
+	node := utils.NewEvalContext(nil)
 
 	err := unmarshalToSlice(node, hclData, &result)
 	if err != nil {

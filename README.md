@@ -28,6 +28,7 @@ go get github.com/genelet/horizon
 - Chapter 3: [Literals: true, false, and null](#chapter-3-literals-true-false-and-null)
 - Chapter 4: [Functions and Function Calls in HCL](#chapter-4-functions-and-function-calls-in-hcl)
 - Chapter 5: [Conversion among Data Formats HCL, JSON and YAML](#chapter-5-conversion-among-data-formats-hcl-json-and-yaml)
+- Chapter 6: [The utils Package: Tree and Evaluation Context](#chapter-6-the-utils-package-tree-and-evaluation-context)
 
 ## Quick Start
 
@@ -1407,6 +1408,110 @@ We see that HCL's syntax is cleaner, more readable, and less error-prone compare
 ## 5.5 Summary
 
 HCL is a novel data format that offers advantages over JSON and YAML. In this article, we have demonstrated how to convert data among these three formats.
+
+<br>
+
+# Chapter 6. The utils Package: Tree and Evaluation Context
+
+## 6.1 Overview
+
+The `utils` package provides the runtime evaluation infrastructure that `dethcl` uses to resolve HCL variable references, function calls, and expressions. Its two central concepts are the `Tree` — a thread-safe variable scope tree — and the evaluation context map (`ref`) that wires the tree together with cty functions.
+
+Most users interact with this package indirectly through `dethcl.UnmarshalSpec`. Direct use is needed only when building higher-level frameworks on top of `horizon`.
+
+## 6.2 Tree
+
+`Tree` is a thread-safe hierarchical data structure that models variable scopes in HCL.
+
+```go
+type Tree struct {
+    Name  string
+    Data  sync.Map   // key-value items at this node (cty.Value)
+    Up    *Tree      // parent node
+    Downs []*Tree    // child nodes
+    // ...
+}
+```
+
+Each node in the tree corresponds to a named scope (e.g. a service name or output identifier). Values stored via `AddItem` are `cty.Value` entries used during HCL expression evaluation.
+
+**Key methods:**
+
+| Method | Description |
+|--------|-------------|
+| `NewTree(name string) *Tree` | Create a new named node |
+| `AddNode(name string) *Tree` | Add (or return existing) child node |
+| `AddNodes(tag string, names ...string) *Tree` | Add a path of child nodes |
+| `GetNode(tag string, names ...string) *Tree` | Look up a node by path |
+| `DeleteNode(name string)` | Remove a child node |
+| `AddItem(k string, v any)` | Store a cty.Value at this node |
+| `DeleteItem(k string)` | Remove a stored value |
+| `FindNode(names []string) *Tree` | Depth-first search for a path |
+| `Variables() map[string]any` | Export tree contents as a Go map |
+| `GetRef() map[string]any` | Return the evaluation context map |
+
+All methods are safe for concurrent use.
+
+## 6.3 Evaluation Context and NewEvalContext
+
+The evaluation context is a `map[string]any` with two well-known keys (defined in `constants.go`):
+
+| Key | Constant | Value |
+|-----|----------|-------|
+| `"attributes"` | `ContextKeyAttributes` | `*Tree` — variable scope root |
+| `"functions"` | `ContextKeyFunctions` | cty function map |
+
+`NewEvalContext` initialises both in one call:
+
+```go
+node := utils.NewEvalContext(nil)
+// node == ref["attributes"].(*utils.Tree)
+// ref["functions"] contains the built-in cty function library
+```
+
+If you pass an existing `ref`, the function reuses the tree already stored at `ref["attributes"]` and merges built-in functions into any existing `ref["functions"]` map.
+
+After the call, the context map is stored on the tree node itself and can be retrieved without keeping a separate variable:
+
+```go
+node := utils.NewEvalContext(nil)
+ref := node.GetRef()   // same map, no separate variable needed
+```
+
+This means callers only need to hold the `*Tree` pointer; the ref map is an implementation detail owned by the node.
+
+## 6.4 Storing and Resolving Output Variables
+
+When one HCL service depends on the output of another, call `AddNode` and `AddItem` to register the result in the tree before the dependent service is evaluated:
+
+```go
+// After service "login" runs and produces a token:
+loginNode := node.AddNode("login")
+cv, _ := utils.NativeToCty(map[string]any{"token": "abc123"})
+loginNode.AddItem("received_body", cv)
+
+// HCL in the next service can now reference:
+//   var.login.received_body.token
+```
+
+`dethcl.UnmarshalSpec` receives the `ref` map (via `node.GetRef()`) and passes it to `ExpressionToCty`, which calls `CtyVariables(tree)` to build the `hcl.EvalContext` for expression evaluation.
+
+## 6.5 Built-in Constants
+
+```go
+const (
+    TreeNodeVar          = "var"        // root node name
+    ContextKeyAttributes = "attributes" // key for the Tree in ref
+    ContextKeyFunctions  = "functions"  // key for cty functions in ref
+)
+```
+
+## 6.6 Summary
+
+- `Tree` is the thread-safe variable scope used during HCL expression evaluation.
+- `NewEvalContext` creates the evaluation context (tree + cty functions) and stores it on the tree node.
+- `Tree.GetRef()` returns the context map, eliminating the need for callers to carry both a `*Tree` and a `map[string]any`.
+- Direct use of `utils` is only needed when embedding `horizon` in a larger framework that manages its own provider or execution context.
 
 ## License
 
