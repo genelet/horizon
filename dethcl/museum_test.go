@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/genelet/schema"
+	"github.com/tabilet/schema"
 )
 
 type museum struct {

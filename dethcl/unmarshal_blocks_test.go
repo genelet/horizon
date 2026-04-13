@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/genelet/schema"
+	"github.com/tabilet/schema"
 )
 
 // These are integration-style tests that verify block processing works correctly

@@ -5,7 +5,6 @@ go 1.25.4
 require (
 	github.com/apparentlymart/go-cidr v1.1.0
 	github.com/bmatcuk/doublestar v1.3.4
-	github.com/genelet/schema v0.0.0-20251203212046-4a325f33cf8e
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-uuid v1.0.3
 	github.com/hashicorp/hcl/v2 v2.24.0

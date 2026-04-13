@@ -7,7 +7,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/genelet/schema"
+	"github.com/tabilet/schema"
 )
 
 // clone creates a new zero-value instance of the same type as old.

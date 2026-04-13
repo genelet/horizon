@@ -9,7 +9,7 @@ import (
 	"unicode"
 
 	"github.com/genelet/horizon/utils"
-	"github.com/genelet/schema"
+	"github.com/tabilet/schema"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"

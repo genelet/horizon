@@ -3,7 +3,7 @@ package dethcl
 import (
 	"testing"
 
-	"github.com/genelet/schema"
+	"github.com/tabilet/schema"
 )
 
 // Test Quick Start sample
