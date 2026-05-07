@@ -3,6 +3,7 @@ module github.com/genelet/horizon
 go 1.25.4
 
 require (
+	github.com/OpenUdon/schema v0.0.0-20260507023912-6ea3308bb955
 	github.com/apparentlymart/go-cidr v1.1.0
 	github.com/bmatcuk/doublestar v1.3.4
 	github.com/google/uuid v1.6.0
@@ -28,5 +29,5 @@ require (
 	golang.org/x/sync v0.18.0 // indirect
 	golang.org/x/sys v0.38.0 // indirect
 	golang.org/x/tools v0.38.0 // indirect
-	google.golang.org/protobuf v1.36.10 // indirect
+	google.golang.org/protobuf v1.36.11 // indirect
 )
