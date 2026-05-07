@@ -5,7 +5,7 @@ import (
 	"reflect"
 
 	"github.com/genelet/horizon/utils"
-	"github.com/tabilet/schema"
+	"github.com/OpenUdon/schema"
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 )

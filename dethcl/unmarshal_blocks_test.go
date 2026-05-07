@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/tabilet/schema"
+	"github.com/OpenUdon/schema"
 )
 
 // These are integration-style tests that verify block processing works correctly

@@ -1,7 +1,7 @@
 package dethcl
 
 import (
-	"github.com/tabilet/schema"
+	"github.com/OpenUdon/schema"
 )
 
 type inter interface {

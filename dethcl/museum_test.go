@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/tabilet/schema"
+	"github.com/OpenUdon/schema"
 )
 
 type museum struct {

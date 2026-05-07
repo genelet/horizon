@@ -3,7 +3,7 @@ package dethcl
 import (
 	"testing"
 
-	"github.com/tabilet/schema"
+	"github.com/OpenUdon/schema"
 )
 
 // Test Quick Start sample

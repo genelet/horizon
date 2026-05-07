@@ -7,7 +7,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/tabilet/schema"
+	"github.com/OpenUdon/schema"
 )
 
 // clone creates a new zero-value instance of the same type as old.
