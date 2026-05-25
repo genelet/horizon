@@ -237,14 +237,14 @@ func NativeToCty(item any) (cty.Value, error) {
 
 func CtyNumberToNative(val cty.Value) (any, error) {
 	v := val.AsBigFloat()
-	if _, accuracy := v.Int64(); accuracy == big.Exact || accuracy == big.Above {
+	if _, accuracy := v.Int64(); accuracy == big.Exact {
 		var x int64
 		err := gocty.FromCtyValue(val, &x)
 		if x > 0x7FFFFFFF || x < -0x80000000 {
 			return x, err
 		}
 		return int(x), err
-	} else if _, accuracy := v.Int(nil); accuracy == big.Exact || accuracy == big.Above {
+	} else if _, accuracy := v.Int(nil); accuracy == big.Exact {
 		var x int
 		err := gocty.FromCtyValue(val, &x)
 		return x, err
