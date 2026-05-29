@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	pathpkg "path"
 	"path/filepath"
 	"unicode/utf8"
 
@@ -284,6 +285,10 @@ func MakeFileSetFunc(baseDir string) function.Function {
 			pattern := patternArg.AsString()
 
 			marks := []cty.ValueMarks{pathMarks, patternMarks}
+
+			if _, err := pathpkg.Match(pattern, ""); err != nil {
+				return cty.UnknownVal(cty.Set(cty.String)), fmt.Errorf("failed to glob pattern %s: %w", redactIfSensitive(pattern, marks...), err)
+			}
 
 			if !filepath.IsAbs(path) {
 				path = filepath.Join(baseDir, path)
