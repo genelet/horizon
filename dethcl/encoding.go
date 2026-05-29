@@ -53,7 +53,8 @@ func classifyMapStructure(item any) (mapStructureType, map[string]any) {
 func encodePrimitiveOrRecurse(item any, equal bool, level int) (string, []byte, error) {
 	switch item.(type) {
 	case string:
-		return fmt.Sprintf("\"%s\"", item), nil, nil
+		s, _ := item.(string)
+		return "\"" + hclEscapeString(s) + "\"", nil, nil
 	case bool:
 		return fmt.Sprintf("%t", item), nil, nil
 	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
@@ -86,6 +87,20 @@ func loopHash(lines *[]string, header string, item any, equal bool, depth, level
 	// Limit HCL labels to 2. If deeper, treat as block body.
 	if depth >= 2 && mapType == nestedMap {
 		mapType = shallowMap
+	}
+
+	// Inside an attribute object literal (equal == true), every nested map must
+	// use attribute syntax (`header = { ... }`); block syntax (`header { ... }`
+	// or labeled blocks) is only valid in block context and would otherwise
+	// produce unparseable HCL. Recurse with equal == true so inner keys also use
+	// attribute syntax.
+	if equal && mapType != notAMap {
+		bs, err := marshalLevel(item, true, level+1, header)
+		if err != nil {
+			return err
+		}
+		*lines = append(*lines, fmt.Sprintf("%s = %s", header, bs))
+		return nil
 	}
 
 	switch mapType {
@@ -127,6 +142,33 @@ func loopHash(lines *[]string, header string, item any, equal bool, depth, level
 		}
 	}
 	return nil
+}
+
+// hclEscapeString escapes a string for inclusion inside an HCL double-quoted
+// literal: backslash, double-quote, and the common control characters. Template
+// introducers ($ and %) are intentionally left untouched so callers that have
+// already escaped interpolation/directives (e.g. "$${...}") are not
+// double-escaped.
+func hclEscapeString(s string) string {
+	var b strings.Builder
+	b.Grow(len(s))
+	for _, r := range s {
+		switch r {
+		case '\\':
+			b.WriteString(`\\`)
+		case '"':
+			b.WriteString(`\"`)
+		case '\n':
+			b.WriteString(`\n`)
+		case '\r':
+			b.WriteString(`\r`)
+		case '\t':
+			b.WriteString(`\t`)
+		default:
+			b.WriteRune(r)
+		}
+	}
+	return b.String()
 }
 
 func matchlast(keyname string, name string) bool {
