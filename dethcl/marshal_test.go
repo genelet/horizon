@@ -1,12 +1,92 @@
 package dethcl
 
 import (
+	"bytes"
 	"encoding/json"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/OpenUdon/schema"
 )
+
+func TestMarshalMapOutputIsDeterministic(t *testing.T) {
+	value := map[string]any{
+		"charlie": 3,
+		"alpha":   map[string]any{"zulu": 26, "beta": 2},
+		"bravo":   nil,
+	}
+
+	first, err := Marshal(value)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i < 100; i++ {
+		got, err := Marshal(value)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !bytes.Equal(got, first) {
+			t.Fatalf("marshal output changed between calls:\nfirst:\n%s\ngot:\n%s", first, got)
+		}
+	}
+
+	assertTextOrder(t, string(first), "alpha", "beta", "zulu", "bravo", "charlie")
+}
+
+type deterministicBlock struct {
+	Value int `hcl:"value"`
+}
+
+type deterministicBlockMaps struct {
+	Named map[string]*deterministicBlock    `hcl:"named,block"`
+	Pairs map[[2]string]*deterministicBlock `hcl:"pair,block"`
+}
+
+func TestMarshalMapBackedBlocksAreDeterministic(t *testing.T) {
+	value := &deterministicBlockMaps{
+		Named: map[string]*deterministicBlock{
+			"zulu":  {Value: 26},
+			"alpha": {Value: 1},
+		},
+		Pairs: map[[2]string]*deterministicBlock{
+			{"zulu", "one"}:  {Value: 26},
+			{"alpha", "two"}: {Value: 1},
+			{"alpha", "one"}: {Value: 2},
+		},
+	}
+
+	first, err := Marshal(value)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i < 100; i++ {
+		got, err := Marshal(value)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !bytes.Equal(got, first) {
+			t.Fatalf("marshal output changed between calls:\nfirst:\n%s\ngot:\n%s", first, got)
+		}
+	}
+
+	assertTextOrder(t, string(first), `named "alpha"`, `named "zulu"`, `pair "alpha" "one"`, `pair "alpha" "two"`, `pair "zulu" "one"`)
+}
+
+func assertTextOrder(t *testing.T, text string, values ...string) {
+	t.Helper()
+	previous := -1
+	for _, value := range values {
+		index := strings.Index(text, value)
+		if index < 0 {
+			t.Fatalf("%q missing from output:\n%s", value, text)
+		}
+		if index <= previous {
+			t.Fatalf("%q is out of order in output:\n%s", value, text)
+		}
+		previous = index
+	}
+}
 
 func TestMHclSimple(t *testing.T) {
 	data1 := `radius = 1.0`

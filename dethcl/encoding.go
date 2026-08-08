@@ -208,22 +208,22 @@ func encoding(current any, equal bool, level int, keyname ...string) ([]byte, er
 
 func encodeMap(rv reflect.Value, equal bool, level int, keyname ...string) ([]byte, error) {
 	var arr []string
-	iter := rv.MapRange()
-	for iter.Next() {
-		key := iter.Key()
+	keys := sortedMapKeys(rv)
+	for _, key := range keys {
 		if key.Kind() != reflect.String {
 			return nil, fmt.Errorf("map key must be string, got %v", key.Kind())
 		}
-		switch iter.Value().Kind() {
+		value := rv.MapIndex(key)
+		switch value.Kind() {
 		case reflect.Interface, reflect.Ptr, reflect.Map, reflect.Slice, reflect.Func:
-			if iter.Value().IsNil() {
+			if value.IsNil() {
 				arr = append(arr, fmt.Sprintf("%s = null", key.String()))
 				continue
 			}
 		default:
 		}
 		if len(keyname) > 0 && keyname[0] == markerNoBrackets {
-			str, bs, err := encodePrimitiveOrRecurse(iter.Value().Interface(), equal, level)
+			str, bs, err := encodePrimitiveOrRecurse(value.Interface(), equal, level)
 			if err != nil {
 				return nil, err
 			}
@@ -233,7 +233,7 @@ func encodeMap(rv reflect.Value, equal bool, level int, keyname ...string) ([]by
 				arr = append(arr, fmt.Sprintf("%s = %s", key.String(), bs))
 			}
 		} else {
-			err := loopHash(&arr, key.String(), iter.Value().Interface(), equal, 0, level, keyname...)
+			err := loopHash(&arr, key.String(), value.Interface(), equal, 0, level, keyname...)
 			if err != nil {
 				return nil, err
 			}
