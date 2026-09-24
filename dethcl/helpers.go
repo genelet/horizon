@@ -128,7 +128,7 @@ func isComplexField(fieldValue reflect.Value, fieldType reflect.Type) bool {
 			return false
 		}
 		// Check if map values are complex types
-		first := fieldValue.MapIndex(fieldValue.MapKeys()[0])
+		first := fieldValue.MapIndex(sortedMapKeys(fieldValue)[0].key)
 		switch first.Kind() {
 		case reflect.Interface, reflect.Map, reflect.Pointer, reflect.Slice, reflect.Struct:
 			return true

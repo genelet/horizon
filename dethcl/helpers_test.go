@@ -292,6 +292,24 @@ func TestIsComplexField(t *testing.T) {
 	}
 }
 
+// TestIsComplexFieldMixedMapIsDeterministic guards against a regression of
+// isComplexField inspecting a random map value (via reflect.Value.MapKeys,
+// which Go re-randomizes on every range) instead of the deterministically
+// sorted first key. "alpha" sorts before "zulu", and only "alpha" holds a
+// struct, so the result must always be true.
+func TestIsComplexFieldMixedMapIsDeterministic(t *testing.T) {
+	value := map[string]any{
+		"alpha": struct{ Name string }{Name: "x"},
+		"zulu":  "scalar",
+	}
+	v := reflect.ValueOf(value)
+	for i := 0; i < 100; i++ {
+		if !isComplexField(v, v.Type()) {
+			t.Fatalf("isComplexField() = false on iteration %d, want true (sorted first key %q holds a struct)", i, "alpha")
+		}
+	}
+}
+
 type TestCategorizeStruct struct {
 	Label      string                  `hcl:"type,label"`
 	Name       string                  `hcl:"name"`

@@ -3,7 +3,6 @@ package dethcl
 import (
 	"fmt"
 	"reflect"
-	"sort"
 	"strings"
 
 	"github.com/genelet/horizon/utils"
@@ -106,11 +105,7 @@ func loopHash(lines *[]string, header string, item any, equal bool, depth, level
 	switch mapType {
 	case nestedMap:
 		// Sort keys for deterministic output
-		keys := make([]string, 0, len(nextMap))
-		for k := range nextMap {
-			keys = append(keys, k)
-		}
-		sort.Strings(keys)
+		keys := sortedStringKeys(nextMap)
 
 		for _, key := range keys {
 			value := nextMap[key]
@@ -207,12 +202,13 @@ func encoding(current any, equal bool, level int, keyname ...string) ([]byte, er
 }
 
 func encodeMap(rv reflect.Value, equal bool, level int, keyname ...string) ([]byte, error) {
+	if rv.Len() > 0 && rv.Type().Key().Kind() != reflect.String {
+		return nil, fmt.Errorf("map key must be string, got %v", rv.Type().Key().Kind())
+	}
+
 	var arr []string
-	keys := sortedMapKeys(rv)
-	for _, key := range keys {
-		if key.Kind() != reflect.String {
-			return nil, fmt.Errorf("map key must be string, got %v", key.Kind())
-		}
+	for _, e := range sortedMapKeys(rv) {
+		key := e.key
 		value := rv.MapIndex(key)
 		switch value.Kind() {
 		case reflect.Interface, reflect.Ptr, reflect.Map, reflect.Slice, reflect.Func:

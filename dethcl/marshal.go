@@ -4,8 +4,6 @@ package dethcl
 import (
 	"fmt"
 	"reflect"
-	"slices"
-	"sort"
 	"strings"
 	"unicode"
 
@@ -368,7 +366,7 @@ func getFields(structType reflect.Type, structValue reflect.Value) ([]*marshalFi
 				needsSpecialMarshaling = true
 				break
 			}
-			switch fieldValue.MapIndex(fieldValue.MapKeys()[0]).Kind() {
+			switch fieldValue.MapIndex(sortedMapKeys(fieldValue)[0].key).Kind() {
 			case reflect.Interface, reflect.Map, reflect.Pointer, reflect.Slice, reflect.Struct:
 				needsSpecialMarshaling = true
 			default:
@@ -558,8 +556,8 @@ func handleMap(field reflect.StructField, oriField reflect.Value, currentLevel, 
 		return []*marshalOut{{extractHCLTagName(fieldTag), nil, []byte("{\n" + leading + "}"), false}}, nil
 	}
 
-	keys := sortedMapKeys(oriField)
-	first := oriField.MapIndex(keys[0])
+	entries := sortedMapKeys(oriField)
+	first := oriField.MapIndex(entries[0].key)
 	isLoop := needsLoopMarshaling(first)
 	typ := field.Type
 	// treat ptr the same as the underlying type e.g. *Example, Example
@@ -569,9 +567,9 @@ func handleMap(field reflect.StructField, oriField reflect.Value, currentLevel, 
 
 	var results []*marshalOut
 	if isLoop {
-		for _, key := range keys {
-			labels := mapKeyLabels(key)
-			v := oriField.MapIndex(key)
+		for _, e := range entries {
+			labels := e.labels
+			v := oriField.MapIndex(e.key)
 			var bs []byte
 			var err error
 			bs, err = marshal(v.Interface(), level, labels...)
@@ -598,29 +596,6 @@ func handleMap(field reflect.StructField, oriField reflect.Value, currentLevel, 
 		results = append(results, &marshalOut{extractHCLTagName(fieldTag), nil, bs, equal})
 	}
 	return results, nil
-}
-
-func sortedMapKeys(value reflect.Value) []reflect.Value {
-	keys := value.MapKeys()
-	sort.Slice(keys, func(i, j int) bool {
-		return slices.Compare(mapKeyLabels(keys[i]), mapKeyLabels(keys[j])) < 0
-	})
-	return keys
-}
-
-func mapKeyLabels(key reflect.Value) []string {
-	if key.Kind() != reflect.Array && key.Kind() != reflect.Slice {
-		return []string{key.String()}
-	}
-
-	labels := make([]string, 0, key.Len())
-	for i := 0; i < key.Len(); i++ {
-		item := key.Index(i)
-		if !item.IsZero() {
-			labels = append(labels, item.String())
-		}
-	}
-	return labels
 }
 
 // isBlank checks if a byte slice contains only whitespace characters.

@@ -88,6 +88,109 @@ func assertTextOrder(t *testing.T, text string, values ...string) {
 	}
 }
 
+type untaggedMixedMapField struct {
+	Data map[string]any
+}
+
+// TestGetFieldsUntaggedMixedMapTagIsDeterministic guards against
+// getFields inspecting a random map value (via reflect.Value.MapKeys,
+// which Go re-randomizes on every range) to decide whether an untagged map
+// field needs a ",block" or ",optional" auto-tag. "alpha" sorts before
+// "zulu", and only "alpha" holds a value that needs special marshaling, so
+// the inferred tag must always be the same.
+func TestGetFieldsUntaggedMixedMapTagIsDeterministic(t *testing.T) {
+	value := untaggedMixedMapField{
+		Data: map[string]any{
+			"alpha": &deterministicBlock{Value: 1},
+			"zulu":  "scalar",
+		},
+	}
+	rv := reflect.ValueOf(value)
+
+	first, err := getFields(rv.Type(), rv)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(first) != 1 {
+		t.Fatalf("got %d fields, want 1", len(first))
+	}
+	wantTag := first[0].field.Tag
+
+	for i := 0; i < 100; i++ {
+		got, err := getFields(rv.Type(), rv)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got[0].field.Tag != wantTag {
+			t.Fatalf("iteration %d: auto-inferred tag changed: first=%q got=%q", i, wantTag, got[0].field.Tag)
+		}
+	}
+}
+
+type deterministicBlockCollidingMaps struct {
+	Pairs map[[2]string]*deterministicBlock `hcl:"pair,block"`
+}
+
+// TestMarshalMapBackedBlocksWithCollidingLabelsIsDeterministic covers the
+// sortedMapKeys tie-breaker: {"a",""} and {"","a"} both reduce to the same
+// mapKeyLabels output (["a"], since trailing zero-value elements are
+// dropped), so without a tie-breaker their relative order is unstable.
+func TestMarshalMapBackedBlocksWithCollidingLabelsIsDeterministic(t *testing.T) {
+	value := &deterministicBlockCollidingMaps{
+		Pairs: map[[2]string]*deterministicBlock{
+			{"a", ""}: {Value: 1},
+			{"", "a"}: {Value: 2},
+		},
+	}
+
+	first, err := Marshal(value)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i < 100; i++ {
+		got, err := Marshal(value)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !bytes.Equal(got, first) {
+			t.Fatalf("marshal output changed between calls:\nfirst:\n%s\ngot:\n%s", first, got)
+		}
+	}
+}
+
+type deterministicBlockIntMaps struct {
+	ByIndex map[int]*deterministicBlock `hcl:"idx,block"`
+}
+
+// TestMarshalMapBackedBlocksWithIntKeysIsDeterministic covers a
+// non-string, non-array map key kind: every int key collides on
+// mapKeyLabels' placeholder label, so this exercises sortedMapKeys' %v
+// tie-breaker. It only asserts output stability, not label content — the
+// label text for int keys is a separate, pre-existing limitation.
+func TestMarshalMapBackedBlocksWithIntKeysIsDeterministic(t *testing.T) {
+	value := &deterministicBlockIntMaps{
+		ByIndex: map[int]*deterministicBlock{
+			1: {Value: 1},
+			2: {Value: 2},
+			3: {Value: 3},
+		},
+	}
+
+	first, err := Marshal(value)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i < 100; i++ {
+		got, err := Marshal(value)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !bytes.Equal(got, first) {
+			t.Fatalf("marshal output changed between calls:\nfirst:\n%s\ngot:\n%s", first, got)
+		}
+	}
+}
+
 func TestMHclSimple(t *testing.T) {
 	data1 := `radius = 1.0`
 	c := new(circle)
